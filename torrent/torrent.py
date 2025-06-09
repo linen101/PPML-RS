@@ -446,7 +446,7 @@ def torrent_admm(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None
         S = hard_thresholding_admm(r, 1-beta, S)       
     return w,ro
 
-def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters=10):
+def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     
     """ 
     Parameters:
@@ -470,7 +470,7 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters=10):
     # DP noise
     sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
     dp_noise = sigma * np.random.randn(d, 1)
-    while np.linalg.norm(r[list(S)]) > epsilon :
+    while np.linalg.norm(r[list(S)]) > epsilon + np.linalg.norm(dp_noise) :
         w = update_fc(X,y, S) + dp_noise
         # Compute dot product <w,x>
         dot_prod = X.transpose().dot(w)
