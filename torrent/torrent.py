@@ -470,7 +470,10 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     # DP noise
     sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
     dp_noise = sigma * np.random.randn(d, 1)
-    while np.linalg.norm(r[list(S)]) > epsilon + np.linalg.norm(dp_noise) :
+    while np.linalg.norm(r[list(S)]) > epsilon :
+        if iteration > max_iters:
+            w = update_fc(X,y, S)
+            break
         w = update_fc(X,y, S) + dp_noise
         # Compute dot product <w,x>
         dot_prod = X.transpose().dot(w)
@@ -479,8 +482,6 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
         # Keep only 1-beta datapoints for the next iteration
         S = hard_thresholding(r,math.ceil((1-beta)*n))
         iteration = iteration + 1
-        if iteration > max_iters:
-            break
     return w, iteration
 
 def torrent_rg(X, y,  beta, epsilon, max_iters=10, ridge=10):
