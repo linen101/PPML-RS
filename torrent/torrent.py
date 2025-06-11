@@ -18,6 +18,8 @@ def split_matrix(X, m, n):
     Returns:
     list: A list of matrices, each of shape (d, n_i) where sum(n_i) = n.
     """
+    n = int(n)
+    m = int(m)
     if m > n:
         raise ValueError("The number of parts m cannot be greater than the number of columns n")
     
@@ -49,6 +51,8 @@ def split_matrix_Y(X, m, n):
     Returns:
     list: A list of matrices, each of shape (d, n_i) where sum(n_i) = n.
     """
+    n = int(n)
+    m = int(m)
     if m > n:
         raise ValueError("The number of parts m cannot be greater than the number of columns n")
     
@@ -111,71 +115,6 @@ def supplcomp(X, y, S):
     
     return XSXT, XSy
     
-# ADMM
-def admm_initcomp(X, y, S, Ainit, binit, z=None):
-    """Initialize variables for ADMM."""
-    parties = X.shape[0]
-    d, n = X[0].shape
-
-    # Initialize variables
-    u = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
-    w = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
-
-    # Copy S (avoid modifying the input)
-    S_new = np.array([np.diagflat(1 - np.diagonal(S[i])) for i in range(parties)])
-
-    # If z is None, initialize as zero vector
-    z = np.zeros((d, 1)) if z is None else z.reshape(-1, 1)
-
-    # Compute A, b for each party
-    A = np.empty(parties, dtype=object)
-    b = np.empty(parties, dtype=object)
-
-    for i in range(parties):
-        A[i], b[i] = precomp(X[i], y[i], S_new[i], Ainit[i], binit[i])
-
-    return A, b, w, z, u
-
-def admm(X, y, S, rho, k, Ainit, binit, z = None):
-    """_ consensus admm 
-    where 
-    multiple parties compute local models
-    under the constrain that
-    their local models are close to each other (converge to a global model)
-    and this global model has small squared error on their data
-    _
-
-    Args:
-        X (np.marray): m dimensional matrix of the local data samples of each P_i (n,d matrices)
-        y (np.marray): m dimensional matrix of the local labels (n matrices)
-        S (np.marray): m dimensional matrix of the local  weights (diagonal square matrices)
-        rho (int): penalty on the divergence of local and global models
-        k (int): umber of iteratiosn
-        
-    Returns:
-            _type_: _description_    
-    """
-    # get number of parties, features
-    parties = X.shape[0]
-    d, n = X[0].shape
-    
-    # Initializations
-    A, b, w, z, u  = admm_initcomp(X, y, S, Ainit, binit, z)
-    
-    for i in range(k):
-        znew = np.zeros(d)
-        znew = znew.reshape(-1,1)
-        for j in range(parties):
-            w[j] = np.matmul(A[j], b[j] + rho/2 * z - 1/2 * u[j] )
-            #print (w[j])
-            znew = znew + w[j]
-            #print(znew)  
-        znew = znew / parties
-        for j in range(parties):
-            u[j] = u[j] + rho *(w[j] - znew)
-        z = znew    
-    return z       
-
 # OLS
 def ols(X, y, S, rho):
     """_summary_
@@ -199,68 +138,6 @@ def ols(X, y, S, rho):
     return XSXTinv, XSy
 
 # TORRENT HELPERS
-def q_quantile(r, q):
-    """_summary_
-
-    Args:
-        r (_type_): _description_
-        q (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    # Flatten all the matrices in r into a single array
-    rvalues = np.concatenate([matrix.flatten() for matrix in r])
-    
-    # Compute the q-quantile of the flattened array
-    qquant = np.quantile(rvalues, q)
-    
-    return qquant
-
-def hard_thresholding(r, q, S):
-    """_summary_
-
-    Args:
-        r (_type_): _description_
-        q (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    # get number of parties
-    m = r.shape[0]
-    
-    # compute q-quantile of residual errors
-    quant = q_quantile(r, q)
-    
-    for i in range(m):
-        S[i] = np.array([1 if value < q else 0 for value in r[i]])
-        S[i] = np.diagflat(S[i])
-
-    return S
-
-def hard_thresholding_admm(r, q, S):
-    """_summary_
-
-    Args:
-        r (_type_): _description_
-        q (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    # get number of parties
-    m = r.shape[0]
-    
-    # compute q-quantile of residual errors
-    quant = q_quantile(r, q)
-    
-    for i in range(m):
-        S[i] = np.array([1 if value < q else 0 for value in r[i]])
-        S[i] = np.diagflat(S[i])
-
-    return S
-
 def hard_thresholding(r, k):
     """
     Parameters:
@@ -390,62 +267,6 @@ def torrent(X, y,  beta, epsilon, max_iters=10):
             break
     return w, iteration
 
-def torrent_admm(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, modelz = None):
-    """_summary_
-
-    Args:
-        X (_type_): _description_
-        y (_type_): _description_
-        beta (_type_): _description_
-        epsilon (_type_): _description_
-        rho (_type_): _description_
-        admm_steps (_type_): _description_
-        rounds (int, optional): _description_. Defaults to 10.
-
-    Returns:
-        _type_: _description_
-    """
-    # get number of parties
-    m = X.shape[0]
-    
-    # create empty A, b, S matrices
-    Ainit = np.empty(m, dtype=object)
-    binit = np.empty(m, dtype=object)
-    S = np.empty(m, dtype=object)
-    
-    # create empty matrices to compute the residual error for each party
-    dot_prod = np.empty(m, dtype=object)
-    r = np.empty(m, dtype=object)
-
-    # get number of features
-    d,_ = X[0].shape
-    
-    # initialize parameters w_0 = 0, S_0 = [n]
-    w = np.zeros(d)
-    w = w.reshape(-1,1)
-
-    n = 0
-    for i in range(m):
-        _,ni = X[i].shape
-        S[i] = np.diagflat(np.ones(ni))
-        n = X[i].shape[0] + n
-        Ainit[i], binit[i] = initialcomp(X[i], y[i], rho) 
-
-    for ro in range(rounds) :
-        if modelz is None:
-            w = admm(X, y, S, rho, admm_steps, Ainit, binit)
-        else:
-            w = admm(X, y, S, rho, admm_steps, Ainit, binit, w)  
-        if np.linalg.norm(abs(w - wstar)) < epsilon:  
-            break         
-        for i in range(m):
-            # Compute dot product <w,x>
-            dot_prod[i] = np.matmul(X[i].T,w)
-            # Compute residuals r
-            r[i] = abs(dot_prod[i] - y[i])            #y - wx
-        S = hard_thresholding_admm(r, 1-beta, S)       
-    return w,ro
-
 def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     
     """ 
@@ -483,6 +304,9 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
         S = hard_thresholding(r,math.ceil((1-beta)*n))
         iteration = iteration + 1
     return w, iteration
+
+
+
 
 def torrent_rg(X, y,  beta, epsilon, max_iters=10, ridge=10):
     """ 
@@ -735,3 +559,203 @@ def torrent_with_residuals(X, y, beta, epsilon, corrupted_indices, max_iters=10)
             break
 
     return w, residuals_per_iteration
+
+
+#ADMM
+def q_quantile(r, q):
+    """_summary_
+
+    Args:
+        r (_type_): _description_
+        q (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    # Flatten all the matrices in r into a single array
+    rvalues = np.concatenate([matrix.flatten() for matrix in r])
+    
+    # Compute the q-quantile of the flattened array
+    qquant = np.quantile(rvalues, q)
+    
+    return qquant
+
+def hard_thresholding_admm(r, q):
+    """_summary_
+
+    Args:
+        r (_type_): _description_
+        q (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    # get number of parties
+    m = r.shape[0]
+    
+    # compute q-quantile of residual errors
+    quant = q_quantile(r, q)
+    S = np.empty(m, dtype=object)
+    for i in range(m):
+        S[i] = np.array([1 if value < quant else 0 for value in r[i]])
+        S[i] = np.diagflat(S[i])
+
+    return S
+def torrent_admm(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None):
+    """_summary_
+
+    Args:
+        X (_type_): containing parties feature vectors
+        y (_type_): containing parties responses
+        beta (_type_): corruption rate
+        epsilon (_type_): model recovery target error
+        rho (_type_): admm rho
+        admm_steps (_type_): admm rounss
+        rounds (int, optional): torrent rounds
+
+    Returns:
+        _type_: model, rounds
+    """
+    # get number of parties
+    m = X.shape[0]
+    
+    # create empty A, b, S matrices
+    A = np.empty(m, dtype=object)
+    b = np.empty(m, dtype=object)
+    S = np.empty(m, dtype=object)
+    
+    # create empty matrices to compute the residual error for each party
+    dot_prod = np.empty(m, dtype=object)
+    r = np.empty(m, dtype=object)
+
+    # get number of features
+    d,_ = X[0].shape
+    
+    # initialize parameters w_0 = 0, S_0 = [n]
+    w = np.zeros(d)
+    w = w.reshape(-1,1)
+
+    for i in range(m):
+        _,ni = X[i].shape
+        S[i] = np.diagflat(np.ones(ni))
+
+    for ro in range(rounds) :
+        w = admm(X, y, S, rho, admm_steps)
+        print(np.linalg.norm(abs(w - wstar)) )
+        if np.linalg.norm(abs(w - wstar)) < epsilon:  
+            break         
+        for i in range(m):
+            # Compute dot product <w,x>
+            dot_prod[i] = np.matmul(X[i].T,w)
+            # Compute residuals r
+            r[i] = abs(dot_prod[i] - y[i])            #y - wx
+        S = hard_thresholding_admm(r, 1-beta)       
+    return w,ro
+
+def admm(X, y, S, rho, k):
+    """_ consensus admm 
+    where 
+    multiple parties compute local models
+    under the constrain that
+    their local models are close to each other (converge to a global model)
+    and this global model has small squared error on their data
+    _
+
+    Args:
+        X (np.marray): m dimensional matrix of the local data samples of each P_i (n,d matrices)
+        y (np.marray): m dimensional matrix of the local labels (n matrices)
+        S (np.marray): m dimensional matrix of the local  weights (diagonal square matrices)
+        rho (int): penalty on the divergence of local and global models
+        k (int): umber of iteratiosn
+        
+    Returns:
+            _type_: _description_    
+    """
+    # get number of parties, features
+    parties = X.shape[0]
+    d, _ = X[0].shape
+    # Initialize variables
+    u = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
+    w = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
+    z = np.zeros((d, 1))
+
+    # initialize A, b for each party
+    A = np.empty(parties, dtype=object)
+    b = np.empty(parties, dtype=object)
+    
+    for i in range(k):
+        znew = np.zeros((d,1))
+        #znew = znew.reshape(-1,1)
+        for j in range(parties):
+            Ahat = X[j]@ S[j]@ X[j].T + rho/2 * np.eye(d)
+            A[j] = np.linalg.inv(Ahat)
+            b[j] = X[j] @ S[j] @ y[j]
+            w[j] = np.matmul(A[j], b[j] + rho/2 * z - 1/2 * u[j] )
+            #print (w[j])
+            znew = znew + w[j]
+            #print(znew)  
+        znew = znew / parties
+        for j in range(parties):
+            u[j] = u[j] + rho *(w[j] - znew)
+        z = znew    
+    return z       
+
+
+def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, rounds = 10, wstar= None):
+    """_summary_
+
+    Args:
+        X (_type_): containing parties feature vectors
+        y (_type_): containing parties responses
+        beta (_type_): corruption rate
+        epsilon (_type_): model recovery target error
+        rho (_type_): admm rho
+        admm_steps (_type_): admm rounss
+        rounds (int, optional): torrent rounds
+
+    Returns:
+        _type_: model, rounds
+    """
+    # get number of parties
+    m = X.shape[0]
+    
+    # create empty A, b, S matrices
+    A = np.empty(m, dtype=object)
+    b = np.empty(m, dtype=object)
+    S = np.empty(m, dtype=object)
+    
+    # create empty matrices to compute the residual error for each party
+    dot_prod = np.empty(m, dtype=object)
+    r = np.empty(m, dtype=object)
+
+    # get number of features
+    d,_ = X[0].shape
+    
+    # initialize parameters w_0 = 0, S_0 = [n]
+    w = np.zeros(d)
+    w = w.reshape(-1,1)
+    
+    # dp noise
+    sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
+    dp_noise = sigma * np.random.randn(d, 1)
+    
+    for i in range(m):
+        _,ni = X[i].shape
+        S[i] = np.diagflat(np.ones(ni))
+    iteration=0
+    while np.linalg.norm(abs(w - wstar)) > epsilon:
+        if iteration > rounds:
+            w = admm(X, y, S, rho, admm_steps) 
+            print(np.linalg.norm(abs(w - wstar)) )
+            break
+        else:
+            w = admm(X, y, S, rho, admm_steps) + dp_noise
+            print(np.linalg.norm(abs(w - wstar)) )
+        for i in range(m):
+            # Compute dot product <w,x>
+            dot_prod[i] = np.matmul(X[i].T,w)
+            # Compute residuals r
+            r[i] = abs(dot_prod[i] - y[i])            #y - wx
+        S = hard_thresholding_admm(r, 1-beta) 
+        iteration= iteration+1      
+    return w,iteration

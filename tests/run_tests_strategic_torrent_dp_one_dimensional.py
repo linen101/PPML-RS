@@ -13,7 +13,7 @@ from numpy.linalg import eigh, inv
 module_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 if module_path not in sys.path:
     sys.path.append(module_path)
-from torrent.torrent import torrent_dp  # Import torrent module
+from torrent.torrent import torrent_dp, torrent, torrent_admm  # Import torrent module
 from synthetic.synthetic_one_dimensional import generate_synthetic_dataset_one_d, strategic_corruption_scaled
 
 def gaussian_mechanism(X, y, epsilon, delta, B_y, w_torrent):
@@ -109,41 +109,51 @@ def run_tests_dp_1d(num_trials):
 
 def run_tests_dp_1d_avg(num_trials):
     # Generate Dataset with Intercept
-    n = 10000  # Number of samples
+    n = 1000  # Number of samples
     sigma = 0.1
-    alpha = 0.3  # 10% of data points are corrupted
-    beta = alpha + 0.05
-    epsilon = 0.1
-    max_iters = 5
-    dp_epsilons = [0.5, 0.7, 0.9, 1, 1.5, 3, 5]
+    alpha = 0.1  # 10% of data points are corrupted
+    beta = alpha + 0.1
+    epsilon = 0.01
+    max_iters = 10
+    dp_epsilons = [0.5, 0.7, 0.9, 1, 1.5, 3, 5, 10]
     dp_delta = 1e-5
     dp_B_y = 1
     # assume y values bounded in [-1, 1]
     
-    predictions = np.zeros((len(dp_epsilons), 100))  # shape: (7, 100)
-
+    predictions_torrent = np.zeros((len(dp_epsilons), n))  # e.g. shape: (7, 100)
+    predictions_huber = np.zeros(n)  # e.g. shape: (100)
     for _ in range(num_trials):
         X_aug, Y, w_star = generate_synthetic_dataset_one_d(n, sigma)
 
         # Apply strategic corruption
         Y_corrupted, corrupted_indices, w_corrupt = strategic_corruption_scaled(X_aug, Y, alpha)
         
-
         # generate test values
-        x_vals = np.linspace(X_aug[1, :].min(), X_aug[1, :].max(), 100).reshape(1, -1)
+        x_vals = np.linspace(X_aug[1, :].min(), X_aug[1, :].max(), n).reshape(1, -1)
         x_vals_aug = np.vstack([np.ones((1, x_vals.shape[1])), x_vals])  # Add intercept term
 
         # honest Model (True)
         y_vals_true = x_vals_aug.T @ w_star
-        #dp_B_y = max((abs(y_vals_true)))
         
         for i, dp_epsilon in enumerate(dp_epsilons):
             w_torrent, iter_count = torrent_dp(X_aug, Y_corrupted, beta, epsilon, dp_epsilon, dp_delta, max_iters)
+            #w_torrent, iter_count = torrent(X_aug, Y_corrupted, beta, epsilon, max_iters)
             y_vals_torrent = x_vals_aug.T @ w_torrent
-            predictions[i] +=  y_vals_torrent.ravel()
-            
-    #get average
-    predictions /= num_trials
+            predictions_torrent[i] +=  y_vals_torrent.ravel()
+        
+        huber = HuberRegressor(fit_intercept=False).fit(X_aug.T, Y_corrupted.ravel())
+        w_huber_intercept = huber.coef_.reshape(-1, 1)  # Already includes intercept and slope
+        #w_huber_intercept = np.array([[huber.intercept_], [huber.coef_[0]]])
+        y_vals_huber = x_vals_aug.T @ w_huber_intercept   
+        predictions_huber += y_vals_huber.ravel()
+    
+    #get average torrent
+    predictions_torrent /= num_trials
+    
+    #get average huber
+    predictions_huber /= num_trials
+    
+    
     
     # create figure
     plt.figure(figsize=(8, 6))
@@ -163,21 +173,25 @@ def run_tests_dp_1d_avg(num_trials):
     
     # adversarial Model (-2x -10)
     y_vals_adv = x_vals_aug.T @ w_corrupt
-    plt.plot(x_vals.T, y_vals_adv, label=f'Adversarial Model $(-2x - 15)$', color="mediumpurple", linestyle="solid")
+    plt.plot(x_vals.T, y_vals_adv, label=f'Adversarial Model $(4.5x + 4.5)$', color="mediumpurple", linestyle="solid")
 
-    
+    #torrent
     colors = cm.viridis(np.linspace(0, 1, len(dp_epsilons)))  
     line_styles = ['dashed', 'dotted', 'dashdot', (0, (3, 1, 1, 1)), (0, (5, 10)), (0, (1, 1))]  # as many as epsilons
     for i, dp_epsilon in enumerate(dp_epsilons):
-        plt.plot(x_vals.T, predictions[i], label=f'Torrent ($\\epsilon = {dp_epsilon}$)', 
+        plt.plot(x_vals.T, predictions_torrent[i], label=f'Torrent ($\\epsilon = {dp_epsilon}$)', 
                     color=colors[i], 
                     linestyle=line_styles[i % len(line_styles)], 
                     linewidth=1.5)
+    
+    #huber
+    plt.plot(x_vals.T, predictions_huber, label="Huber Regression", color="red", linestyle="dashdot")
+    
     # Labels and legend
     plt.xlabel("Feature X")
     plt.ylabel("Label Y")
     plt.legend()
-    plt.title(f"Strategic Corruption in 1D $(\\beta = {alpha})$")
+    plt.title(f"Strategic Corruption in 1D $(n= {n}, \\beta = {alpha})$")
     plt.grid(False)
 
     # Show plot

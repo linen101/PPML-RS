@@ -1,11 +1,10 @@
 # toy_dataset.py
 
-# pending things to do: 
-    # 1. create separate sets for Train and Test [done]
-    # 2. corruption strategy [later]
      
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 
 def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2):
     """

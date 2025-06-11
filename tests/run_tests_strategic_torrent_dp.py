@@ -11,7 +11,7 @@ if module_path not in sys.path:
 from synthetic.strategic_corruptions import generate_synthetic_dataset, strategic_corruption_on_X, adversarial_corruption, rotate_w_arbitrary , sparse_noise_w_arbitrary , interpolate_w_arbitrary, strategic_corruption_scaled, rotate_w_partial
 from realdata.real_data import load_and_process_gas_sensor_data
 from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
-from torrent.torrent import torrent_dp, torrent
+from torrent.torrent import torrent_dp, torrent, torrent_admm_dp, split_matrix, split_matrix_Y, torrent_admm
 from decimal import *
 from sever.sever import sever
 from stir.irls_regressors import irls_init, admm_huber
@@ -21,7 +21,7 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_dp(num_trials=10):
     # Define test parameters
-    dp_epsilon = 1
+    dp_epsilon = 20
     dp_delta = 1e-5
     n = 1000  # Number of samples
     dimension = 100
@@ -36,7 +36,7 @@ def run_tests_dp(num_trials=10):
     theta = np.pi  # Rotation
     variance = 0.1 #, interpolation
     mixing = 0.5 #interpolation
-    additive = 0.9
+    additive = 0.1
     multiplicative = 0.1
     sparsity = 0.2
     # Initialize lists to store results
@@ -49,11 +49,11 @@ def run_tests_dp(num_trials=10):
     w_errors_alpha_huber = np.zeros(len(alpha_values))
     iters_alpha = np.zeros(len(alpha_values))
     iters_alpha_huber = np.zeros(len(alpha_values))
-    m = 2
+    m = 4
     rho=1
     admm_steps=10
     robust_rounds=10
-    modelz=1
+    train_size = n - n*test_perc
     # Run multiple trials
     for _ in range(num_trials):
         """
@@ -62,6 +62,11 @@ def run_tests_dp(num_trials=10):
             w_corrupt = multiplicative*w_star + additive
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
             
+            X_parts = split_matrix(X_train, m, train_size)
+            y_parts = split_matrix_Y(Y_cor, m, train_size)
+            
+            rho=1
+            w_torrent, iter_count= torrent_admm_dp(X_parts, y_parts, beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, robust_rounds, w_star)
             w_torrent, iter_count= torrent_dp(X_train, Y_cor, beta, epsilon, dp_epsilon, dp_delta, robust_rounds)
             w_errors_d_torrent[i] += np.linalg.norm(w_torrent - w_star)
             print(w_errors_d_torrent[i])
@@ -77,7 +82,13 @@ def run_tests_dp(num_trials=10):
             
             # Run Torrent
             beta = alpha + 0.1  # filter size
-            w_torrent, iter_count= torrent(X_train, Y_cor, beta, epsilon, robust_rounds)
+            
+            X_parts = split_matrix(X_train, m, train_size)
+            y_parts = split_matrix_Y(Y_cor, m, train_size)
+            
+            rho=1
+            w_torrent, iter_count= torrent_admm_dp(X_parts, y_parts, beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, robust_rounds, w_star)
+            #w_torrent, iter_count= torrent_dp(X_train, Y_cor, beta, epsilon, dp_epsilon, dp_delta, robust_rounds)
             w_errors_alpha_torrent[j] += np.linalg.norm(w_torrent - w_star)
             print(w_errors_alpha_torrent[j])
             iters_alpha[j] += iter_count

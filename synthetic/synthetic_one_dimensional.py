@@ -16,8 +16,8 @@ def strategic_corruption_scaled(X_aug, Y, alpha, base_scaling=1.0, influence_fac
     """
     d, n = X_aug.shape
 
-    # Set adversarial model: Y = 5x -15
-    w_corrupt = np.array([[-15], [-2]])  # Intercept = -15, Slope = -2
+    # Set adversarial model: Y = -5x -10
+    w_corrupt = np.array([[4.5], [4.5]])  # Intercept = -10, Slope = -5
 
     # Compute ideal labels under the adversarial model
     Y_corrupt_ideal = np.dot(X_aug.T, w_corrupt)
