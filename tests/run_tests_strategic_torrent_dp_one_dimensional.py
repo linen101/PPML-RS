@@ -6,7 +6,6 @@ import matplotlib.cm as cm
 from sklearn.linear_model import HuberRegressor, LinearRegression
 import os
 import sys
-
 from numpy.linalg import eigh, inv
 
 
@@ -16,29 +15,7 @@ if module_path not in sys.path:
 from torrent.torrent import torrent_dp, torrent, torrent_admm  # Import torrent module
 from synthetic.synthetic_one_dimensional import generate_synthetic_dataset_one_d, strategic_corruption_scaled
 
-def gaussian_mechanism(X, y, epsilon, delta, B_y, w_torrent):
-    """
-    Applies the Gaussian mechanism to least squares regression:
-    M(X, y) = w_torrent + Gaussian noise
-    """
-    d,n = X.shape
-    Sigma = X @ X.T
-    # Step 2: Estimate lambda_min(Sigma)
-    lambda_min = np.min(eigh(Sigma)[0])  # smallest eigenvalue
 
-    # Step 3: Compute L2 sensitivity
-    Delta_f = ((2 * np.sqrt(d) * B_y) / lambda_min) + (2 * d * np.sqrt(n * d) * B_y * np.sqrt(d)) / (lambda_min ** 2)
-
-    # Step 4: Compute noise scale
-    sigma = (np.sqrt(2 * np.log(2 / delta)) / epsilon) * Delta_f
-
-    # Step 5: Sample noise from N(0, I_d)
-    noise = np.random.randn(d, 1)
-
-    # Step 6: Return private estimator
-    beta_private = w_torrent + sigma * noise
-
-    return beta_private
 
 def run_tests_dp_1d(num_trials):
     # Generate Dataset with Intercept
@@ -109,13 +86,13 @@ def run_tests_dp_1d(num_trials):
 
 def run_tests_dp_1d_avg(num_trials):
     # Generate Dataset with Intercept
-    n = 1000  # Number of samples
+    n = 1000 # Number of samples
     sigma = 0.1
     alpha = 0.1  # 10% of data points are corrupted
     beta = alpha + 0.1
     epsilon = 0.01
     max_iters = 10
-    dp_epsilons = [0.5, 0.7, 0.9, 1, 1.5, 3, 5, 10]
+    dp_epsilons = [1, 10]
     dp_delta = 1e-5
     dp_B_y = 1
     # assume y values bounded in [-1, 1]

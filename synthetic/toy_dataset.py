@@ -26,10 +26,11 @@ def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2):
     # Generate true model w* as a matrix with dimensions [d, 1]
     # The ciefficients w_{star_i} are sampled from a Gaussian distribution with standard deviation
     w_star = np.random.randn(d, 1) 
+    w_star /= np.linalg.norm(w_star)
 
     # Generate feature vectors X with dimensions [d, n] 
     # X are sampled from a Gaussian distribution with standard deviation
-    X = np.random.randn(d, n) + 10
+    X = 10*np.random.randn(d, n)
 
     # Generate Custom Heavy-tailed Sub-Gaussian Distribution
     #    This uses a bounded, symmetrized Weibull distribution (which can be sub-Gaussian).

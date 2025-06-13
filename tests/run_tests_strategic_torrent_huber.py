@@ -49,7 +49,7 @@ def run_tests_huber(num_trials=10):
     m = 2
     rho=1
     admm_steps=10
-    robust_rounds=10
+    robust_rounds=5
     modelz=1
     train_size =  n - n*test_perc
     # Run multiple trials

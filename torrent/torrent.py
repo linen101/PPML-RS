@@ -2,6 +2,8 @@
 
 import numpy as np
 import math
+from numpy.linalg import eigh, inv
+
 #import pyproximal
 #from pyproximal.optimization.primal import ADMML2
 #from pyproximal.proximal import ProxL2, ProxL1
@@ -266,47 +268,6 @@ def torrent(X, y,  beta, epsilon, max_iters=10):
         if iteration > max_iters:
             break
     return w, iteration
-
-def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
-    
-    """ 
-    Parameters:
-    - Training data: {X, Y}
-    - step length size: \eta
-    - thresholding parameter: beta
-    - tolerance: epsilon
-    Returns:
-    - estimated weights: w
-    """ 
-    
-    # initialize parameters w_0 = 0, S_0 = [n], t = 0, r_0 = y
-    iteration = 0 
-    r = y
-    abs_r = np.abs(r)
-    d, n = X.shape
-    S = np.arange(n)  # Create an array with values from 0 to n-1
-    w = np.zeros(d)
-    w = w.reshape(-1,1)
-    
-    # DP noise
-    sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
-    dp_noise = sigma * np.random.randn(d, 1)
-    while np.linalg.norm(r[list(S)]) > epsilon :
-        if iteration > max_iters:
-            w = update_fc(X,y, S)
-            break
-        w = update_fc(X,y, S) + dp_noise
-        # Compute dot product <w,x>
-        dot_prod = X.transpose().dot(w)
-        # Compute residuals r
-        r = dot_prod - y            #y - wx
-        # Keep only 1-beta datapoints for the next iteration
-        S = hard_thresholding(r,math.ceil((1-beta)*n))
-        iteration = iteration + 1
-    return w, iteration
-
-
-
 
 def torrent_rg(X, y,  beta, epsilon, max_iters=10, ridge=10):
     """ 
@@ -701,6 +662,71 @@ def admm(X, y, S, rho, k):
     return z       
 
 
+# DP 
+
+def gaussian_mechanism(X, y, epsilon, delta, B_y, w_torrent):
+    """
+    Applies the Gaussian mechanism to least squares regression:
+    M(X, y) = w_torrent + Gaussian noise
+    """
+    d,n = X.shape
+    Sigma = X @ X.T
+    # Step 2: Estimate lambda_min(Sigma)
+    lambda_min = np.min(eigh(Sigma)[0])  # smallest eigenvalue
+
+    # Step 3: Compute L2 sensitivity
+    Delta_f = ((2 * np.sqrt(d) * B_y) / lambda_min) + (2 * d * np.sqrt(n * d) * B_y * np.sqrt(d)) / (lambda_min ** 2)
+
+    # Step 4: Compute noise scale
+    sigma = (np.sqrt(2 * np.log(2 / delta)) / epsilon) * Delta_f
+
+    # Step 5: Sample noise from N(0, I_d)
+    noise = np.random.randn(d, 1)
+
+    # Step 6: Return private estimator
+    beta_private = w_torrent + sigma * noise
+
+    return beta_private
+
+def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
+    
+    """ 
+    Parameters:
+    - Training data: {X, Y}
+    - step length size: \eta
+    - thresholding parameter: beta
+    - tolerance: epsilon
+    Returns:
+    - estimated weights: w
+    """ 
+    
+    # initialize parameters w_0 = 0, S_0 = [n], t = 0, r_0 = y
+    iteration = 0 
+    r = y
+    abs_r = np.abs(r)
+    d, n = X.shape
+    S = np.arange(n)  # Create an array with values from 0 to n-1
+    w = np.zeros(d)
+    w = w.reshape(-1,1)
+    
+    # DP noise
+    sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
+    dp_noise = sigma * np.random.randn(d, 1)
+    for iterations in range(max_iters):
+        w = update_fc(X,y, S) 
+        w = w + dp_noise
+        #w = gaussian_mechanism(X, y, dp_epsilon, dp_delta, 1, w)
+        # Compute dot product <w,x>
+        dot_prod = X.transpose().dot(w)
+        # Compute residuals r
+        r = dot_prod - y            #y - wx
+        # Keep only 1-beta datapoints for the next iteration
+        S = hard_thresholding(r,math.ceil((1-beta)*n))
+    w = w - dp_noise
+    return w, iteration
+
+
+
 def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, rounds = 10, wstar= None):
     """_summary_
 
@@ -743,19 +769,23 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
         _,ni = X[i].shape
         S[i] = np.diagflat(np.ones(ni))
     iteration=0
-    while np.linalg.norm(abs(w - wstar)) > epsilon:
-        if iteration > rounds:
-            w = admm(X, y, S, rho, admm_steps) 
-            print(np.linalg.norm(abs(w - wstar)) )
-            break
-        else:
-            w = admm(X, y, S, rho, admm_steps) + dp_noise
-            print(np.linalg.norm(abs(w - wstar)) )
+    
+    #while np.linalg.norm(abs(w - dp_noise - wstar)) > epsilon:
+        #if iteration > rounds:
+            #w = admm(X, y, S, rho, admm_steps) 
+            #print(np.linalg.norm(abs(w - wstar)) )
+        #    break
+        #else:
+    for iteration in range(rounds):        
+        w = admm(X, y, S, rho, admm_steps) + dp_noise
+        print(np.linalg.norm(abs(w - dp_noise - wstar)) )
         for i in range(m):
             # Compute dot product <w,x>
             dot_prod[i] = np.matmul(X[i].T,w)
             # Compute residuals r
             r[i] = abs(dot_prod[i] - y[i])            #y - wx
         S = hard_thresholding_admm(r, 1-beta) 
-        iteration= iteration+1      
+        #iteration= iteration+1      
+    w = w - dp_noise
+    print(np.linalg.norm(abs(w - wstar)) )
     return w,iteration

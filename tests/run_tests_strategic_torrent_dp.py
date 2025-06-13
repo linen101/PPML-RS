@@ -21,24 +21,20 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_dp(num_trials=10):
     # Define test parameters
-    dp_epsilon = 20
+    dp_epsilon = 5
     dp_delta = 1e-5
-    n = 1000  # Number of samples
+    n = 2000  # Number of samples
     dimension = 100
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
-    d_values = [10, 50, 100, 150, 200, 300]  # Different dimensions
+    d_values = [1, 2, 3]  # Different dimensions
     alpha_values = [0.1, 0.12, 0.15, 0.18, 0.2]  # Corruption rates
     sigma = 0.1  # Noise level
     test_perc = 0.2  # Test set percentage
     
-    epsilon = 0.1  # Convergence threshold
-    theta = np.pi  # Rotation
-    variance = 0.1 #, interpolation
-    mixing = 0.5 #interpolation
+    epsilon = 0.01  # Convergence threshold
     additive = 0.1
-    multiplicative = 0.1
-    sparsity = 0.2
+    multiplicative = 1
     # Initialize lists to store results
     w_errors_d_torrent = np.zeros(len(d_values))
     w_errors_d_huber = np.zeros(len(d_values))
@@ -49,14 +45,15 @@ def run_tests_dp(num_trials=10):
     w_errors_alpha_huber = np.zeros(len(alpha_values))
     iters_alpha = np.zeros(len(alpha_values))
     iters_alpha_huber = np.zeros(len(alpha_values))
-    m = 4
+    m = 2
     rho=1
     admm_steps=10
-    robust_rounds=10
+    robust_rounds=5
     train_size = n - n*test_perc
     # Run multiple trials
-    for _ in range(num_trials):
-        """
+    for t in range(num_trials):
+        print(f'$ \ TRIAL= {t}$')
+        
         for i, d in enumerate(d_values):
             X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
             w_corrupt = multiplicative*w_star + additive
@@ -67,12 +64,12 @@ def run_tests_dp(num_trials=10):
             
             rho=1
             w_torrent, iter_count= torrent_admm_dp(X_parts, y_parts, beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, robust_rounds, w_star)
-            w_torrent, iter_count= torrent_dp(X_train, Y_cor, beta, epsilon, dp_epsilon, dp_delta, robust_rounds)
+            #w_torrent, iter_count= torrent_dp(X_train, Y_cor, beta, epsilon, dp_epsilon, dp_delta, robust_rounds)
             w_errors_d_torrent[i] += np.linalg.norm(w_torrent - w_star)
             print(w_errors_d_torrent[i])
             iters_d[i] += iter_count
             print(iter_count)
-        """  
+        """
         for j, alpha in enumerate(alpha_values):
             X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, dimension, sigma, test_perc)
 
@@ -93,14 +90,15 @@ def run_tests_dp(num_trials=10):
             print(w_errors_alpha_torrent[j])
             iters_alpha[j] += iter_count
             print(iter_count)
+        """  
 # Compute averages
-    #w_errors_d_torrent /= num_trials
-    #iters_d //= num_trials + 1 
-    w_errors_alpha_torrent /= num_trials
-    iters_alpha //= num_trials + 1 
+    w_errors_d_torrent /= num_trials
+    iters_d //= num_trials + 1 
+    #w_errors_alpha_torrent /= num_trials
+    #iters_alpha //= num_trials + 1 
     
 ###
-    """
+    
     # Plot results
     plt.figure(figsize=(8, 5))
     plt.plot(d_values, w_errors_d_torrent, marker='o', linestyle="dashed", label='Torrent $w_{error}$', color='palevioletred')
@@ -119,7 +117,7 @@ def run_tests_dp(num_trials=10):
     plt.legend()
     plt.grid(False)
     plt.show()
-
+    """
 # Run the tests with averaging
-num_trials = 5
+num_trials = 10
 run_tests_dp(num_trials)
