@@ -21,7 +21,7 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_dp(num_trials=10):
     # Define test parameters
-    dp_epsilon = 5
+    dp_epsilon = 1
     dp_delta = 1e-5
     n = 2000  # Number of samples
     dimension = 100

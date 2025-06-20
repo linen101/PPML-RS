@@ -522,6 +522,27 @@ def torrent_with_residuals(X, y, beta, epsilon, corrupted_indices, max_iters=10)
     return w, residuals_per_iteration
 
 
+def torrent_intermediate(X, y, beta, epsilon, max_iters=10):
+    iteration = 0
+    r = y
+    d, n = X.shape
+    S = np.arange(n)
+    w = np.zeros((d, 1))
+
+    w_history = [w.copy()]
+    S_history = [S.copy()]  # Record initial full set
+
+    while np.linalg.norm(r[list(S)]) > epsilon:
+        w = update_fc(X, y, S)
+        r = X.T @ w - y
+        S = hard_thresholding(r, math.ceil((1 - beta) * n))
+        w_history.append(w.copy())
+        S_history.append(S.copy())  # Track S
+        iteration += 1
+        if iteration >= max_iters:
+            break
+
+    return w, iteration, w_history, S_history
 #ADMM
 def q_quantile(r, q):
     """_summary_
@@ -764,7 +785,8 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     # dp noise
     sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
     dp_noise = sigma * np.random.randn(d, 1)
-    
+    # plot the noise distribution
+    # do experiments with constant numbers.
     for i in range(m):
         _,ni = X[i].shape
         S[i] = np.diagflat(np.ones(ni))

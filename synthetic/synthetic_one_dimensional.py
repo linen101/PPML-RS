@@ -45,10 +45,10 @@ def generate_synthetic_dataset_one_d(n, sigma):
     Creates a synthetic dataset where X and Y follow a linear model with a known intercept.
     """
     # Set the true model: Y = 5x + 4
-    w_star = np.array([[4], [5]])  # Intercept = 4, Slope = 5
+    w_star = np.array([[15], [5]])  # Intercept = 4, Slope = 5
 
     # Generate features X
-    X = np.random.randn(1, n) + 10 # Shifted distribution
+    X = 2*np.random.randn(1, n) + 2  # Shifted distribution
 
     # Add intercept term (row of ones)
     X_aug = np.vstack([np.ones((1, n)), X]) 
