@@ -26,6 +26,8 @@ def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2):
     # Generate true model w* as a matrix with dimensions [d, 1]
     # The ciefficients w_{star_i} are sampled from a Gaussian distribution with standard deviation
     w_star = np.random.randn(d, 1) 
+    
+    #w_star = np.random.uniform(low=-10, high=10, size=(d, 1))
     w_star /= np.linalg.norm(w_star)
 
     # Generate feature vectors X with dimensions [d, n] 

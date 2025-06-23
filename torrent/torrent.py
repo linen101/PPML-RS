@@ -783,8 +783,11 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     w = w.reshape(-1,1)
     
     # dp noise
-    sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
-    dp_noise = sigma * np.random.randn(d, 1)
+    #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 2d_f
+    #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
+    #dp_noise = sigma * np.random.randn(d, 1)
+    dp_noise = dp_epsilon * np.random.randn(d, 1) # dp_epsilon is the whole noise now for testing purposes
+    
     # plot the noise distribution
     # do experiments with constant numbers.
     for i in range(m):
@@ -792,22 +795,22 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
         S[i] = np.diagflat(np.ones(ni))
     iteration=0
     
-    #while np.linalg.norm(abs(w - dp_noise - wstar)) > epsilon:
-        #if iteration > rounds:
+    while np.linalg.norm(abs(w - wstar)) > 0.5:
+        if iteration > rounds:
             #w = admm(X, y, S, rho, admm_steps) 
             #print(np.linalg.norm(abs(w - wstar)) )
-        #    break
-        #else:
-    for iteration in range(rounds):        
-        w = admm(X, y, S, rho, admm_steps) + dp_noise
-        print(np.linalg.norm(abs(w - dp_noise - wstar)) )
-        for i in range(m):
-            # Compute dot product <w,x>
-            dot_prod[i] = np.matmul(X[i].T,w)
-            # Compute residuals r
-            r[i] = abs(dot_prod[i] - y[i])            #y - wx
-        S = hard_thresholding_admm(r, 1-beta) 
-        #iteration= iteration+1      
-    w = w - dp_noise
+            break
+        else:
+    #for iteration in range(rounds): 
+            w = admm(X, y, S, rho, admm_steps) + dp_noise
+            #print(np.linalg.norm(abs(w - dp_noise - wstar)) )
+            for i in range(m):
+                # Compute dot product <w,x>
+                dot_prod[i] = np.matmul(X[i].T,w)
+                # Compute residuals r
+                r[i] = abs(dot_prod[i] - y[i])            #y - wx
+            S = hard_thresholding_admm(r, 1-beta) 
+            iteration= iteration+1      
+    #w = admm(X, y, S, rho, admm_steps)
     print(np.linalg.norm(abs(w - wstar)) )
     return w,iteration
