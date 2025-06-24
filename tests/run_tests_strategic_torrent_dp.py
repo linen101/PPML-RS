@@ -20,26 +20,30 @@ getcontext().prec = 4
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_torrent_dp_d(num_trials=10):
+    # test size and noise params
     dp_epsilons = [0.5, 1, 2, 5, 10]  # Try different privacy levels
     dp_noise = [0.01, 0.05, 0.1, 0.2]
     dp_delta = 1e-5
     n = 1000
-    dimension = 100
     d_values = [10, 50, 100]
     alpha_init = 0.1
     beta = alpha_init + 0.1
-    sigma = 0.1
-    test_perc = 0.2
+    sigma = 0.1     # standard deviation bounded noise
+    test_perc = 0.1
+    train_size = int(n * (1 - test_perc))    
     epsilon = 0.01  # convergence threshold
+    
+    # corruption
     additive = 10
     multiplicative = 10
+    
+    # admm params
     m = 2
     rho = 1
     admm_steps = 10
     robust_rounds = 5
-    train_size = int(n * (1 - test_perc))
 
-    # Errors will be shape: (len(dp_epsilons), len(d_values))
+    # errors will be shape: (len(dp_epsilons), len(d_values))
     w_errors_dp_d = np.zeros((len(dp_noise), len(d_values)))
     
     for t in range(num_trials):
@@ -85,24 +89,29 @@ def run_tests_torrent_dp_d(num_trials=10):
     
 
 def run_tests_torrent_dp_alpha(num_trials=10):
+    # test size and noise params
     dp_epsilons = [0.5, 1, 2, 5, 10]  # Try different privacy levels
     dp_noise = [0.01, 0.05, 0.1, 0.2]
     dp_delta = 1e-5
-    n = 1000
-    dimension = 10
+    n = 100000
+    dimension = 100
     alpha_values = [0.1, 0.2, 0.3, 0.4]
     sigma = 0.1
-    test_perc = 0.2
+    test_perc = 0.1
+    train_size = int(n * (1 - test_perc))
     epsilon = 0.01  # convergence threshold
+
+    # corruption
     additive = 10
     multiplicative = 10
+    
+    # admm params
     m = 2
     rho = 1
     admm_steps = 10
     robust_rounds = 5
-    train_size = int(n * (1 - test_perc))
     
-    # Errors will be shape: (len(dp_epsilons), len(alpha_values))
+    # errors will be shape: (len(dp_epsilons), len(alpha_values))
     w_errors_dp_alpha = np.zeros((len(dp_noise), len(alpha_values)))
 
     for t in range(num_trials):
@@ -138,7 +147,7 @@ def run_tests_torrent_dp_alpha(num_trials=10):
             plt.text(x, y + 0.005, f'{y:.3f}', ha='center', va='bottom', fontsize=9, color=colors[e])
 
 
-    plt.xlabel(f'Corruption fraction $\beta', fontsize=14)
+    plt.xlabel(f'Corruption fraction $\\beta', fontsize=14)
     plt.ylabel(r'$\| w - w^* \|_2$', fontsize=14)
     plt.title(f'Strategic Corruption with DP (n={n}, d={dimension}, σ={sigma})', fontsize=14)
     plt.legend()

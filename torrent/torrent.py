@@ -672,7 +672,7 @@ def admm(X, y, S, rho, k):
             Ahat = X[j]@ S[j]@ X[j].T + rho/2 * np.eye(d)
             A[j] = np.linalg.inv(Ahat)
             b[j] = X[j] @ S[j] @ y[j]
-            w[j] = np.matmul(A[j], b[j] + rho/2 * z - 1/2 * u[j] )
+            w[j] = A[j] @ ( b[j] + rho/2 * z - 1/2 * u[j] )
             #print (w[j])
             znew = znew + w[j]
             #print(znew)  
