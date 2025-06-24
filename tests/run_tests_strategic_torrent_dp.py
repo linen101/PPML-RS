@@ -19,11 +19,11 @@ from decimal import *
 getcontext().prec = 4
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
-def run_tests_torrent_dp(num_trials=10):
+def run_tests_torrent_dp_d(num_trials=10):
     dp_epsilons = [0.5, 1, 2, 5, 10]  # Try different privacy levels
     dp_noise = [0.01, 0.05, 0.1, 0.2]
     dp_delta = 1e-5
-    n = 100000
+    n = 1000
     dimension = 100
     d_values = [10, 50, 100]
     alpha_init = 0.1
@@ -31,8 +31,8 @@ def run_tests_torrent_dp(num_trials=10):
     sigma = 0.1
     test_perc = 0.2
     epsilon = 0.01  # convergence threshold
-    additive = 0.1
-    multiplicative = 0.1
+    additive = 10
+    multiplicative = 10
     m = 2
     rho = 1
     admm_steps = 10
@@ -41,7 +41,7 @@ def run_tests_torrent_dp(num_trials=10):
 
     # Errors will be shape: (len(dp_epsilons), len(d_values))
     w_errors_dp_d = np.zeros((len(dp_noise), len(d_values)))
-
+    
     for t in range(num_trials):
         print(f'>>> Trial {t+1}/{num_trials}')
         for e, noise in enumerate(dp_noise):
@@ -57,11 +57,11 @@ def run_tests_torrent_dp(num_trials=10):
                 w_torrent, iter_count = torrent_admm_dp(X_parts, y_parts, beta, epsilon, rho, noise, dp_delta, admm_steps, robust_rounds, w_star)
                 error = np.linalg.norm(w_torrent - w_star)
                 w_errors_dp_d[e, i] += error
-
+    
     # Average over trials
     w_errors_dp_d /= num_trials
 
-    # Plot
+    # Plot dimension
     plt.figure(figsize=(10, 6))
     colors = cm.viridis(np.linspace(0, 1, len(dp_noise)))
     line_styles = ['dashed', 'dotted', 'dashdot', (0, (3, 1, 1, 1)), (0, (1, 1))]
@@ -81,10 +81,76 @@ def run_tests_torrent_dp(num_trials=10):
     plt.grid(False)
     plt.tight_layout()
     plt.show()
+    
+    
+
+def run_tests_torrent_dp_alpha(num_trials=10):
+    dp_epsilons = [0.5, 1, 2, 5, 10]  # Try different privacy levels
+    dp_noise = [0.01, 0.05, 0.1, 0.2]
+    dp_delta = 1e-5
+    n = 1000
+    dimension = 10
+    alpha_values = [0.1, 0.2, 0.3, 0.4]
+    sigma = 0.1
+    test_perc = 0.2
+    epsilon = 0.01  # convergence threshold
+    additive = 10
+    multiplicative = 10
+    m = 2
+    rho = 1
+    admm_steps = 10
+    robust_rounds = 5
+    train_size = int(n * (1 - test_perc))
+    
+    # Errors will be shape: (len(dp_epsilons), len(alpha_values))
+    w_errors_dp_alpha = np.zeros((len(dp_noise), len(alpha_values)))
+
+    for t in range(num_trials):
+        print(f'>>> Trial {t+1}/{num_trials}')
+        for e, noise in enumerate(dp_noise):
+            for i, alpha in enumerate(alpha_values):
+                X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, dimension, sigma, test_perc)
+                w_corrupt = multiplicative * w_star + additive
+                Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
+
+                X_parts = split_matrix(X_train, m, train_size)
+                y_parts = split_matrix_Y(Y_cor, m, train_size)
+                
+                # add noise to see how much noise torrent can have.
+                beta = alpha + 0.1
+                w_torrent, iter_count = torrent_admm_dp(X_parts, y_parts, beta, epsilon, rho, noise, dp_delta, admm_steps, robust_rounds, w_star)
+                error = np.linalg.norm(w_torrent - w_star)
+                w_errors_dp_alpha[e, i] += error    
+
+    # Average over trials
+    w_errors_dp_alpha /= num_trials
+    
+    # Plot alpha
+    plt.figure(figsize=(10, 6))
+    colors = cm.viridis(np.linspace(0, 1, len(dp_noise)))
+    line_styles = ['dashed', 'dotted', 'dashdot', (0, (3, 1, 1, 1)), (0, (1, 1))]
+
+    for e, noise in enumerate(dp_noise):
+        errors = w_errors_dp_alpha[e]
+        plt.plot(alpha_values, errors, label=f'$noise = {noise}$', 
+                 color=colors[e], linestyle=line_styles[e % len(line_styles)], linewidth=2)
+        for x, y in zip(alpha_values, errors):
+            plt.text(x, y + 0.005, f'{y:.3f}', ha='center', va='bottom', fontsize=9, color=colors[e])
 
 
+    plt.xlabel(f'Corruption fraction $\beta', fontsize=14)
+    plt.ylabel(r'$\| w - w^* \|_2$', fontsize=14)
+    plt.title(f'Strategic Corruption with DP (n={n}, d={dimension}, σ={sigma})', fontsize=14)
+    plt.legend()
+    plt.grid(False)
+    plt.tight_layout()
+    plt.show()
+    
 # Run the tests with averaging
 num_trials = 5
 
-#Run OLS
-run_tests_torrent_dp(num_trials)
+#Run tests d
+#run_tests_torrent_dp_d(num_trials)
+
+#Run tests alpha
+run_tests_torrent_dp_alpha(num_trials)

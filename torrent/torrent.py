@@ -746,8 +746,6 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     w = w - dp_noise
     return w, iteration
 
-
-
 def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, rounds = 10, wstar= None):
     """_summary_
 
@@ -786,7 +784,7 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 2d_f
     #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
     #dp_noise = sigma * np.random.randn(d, 1)
-    dp_noise = dp_epsilon * np.random.randn(d, 1) # dp_epsilon is the whole noise now for testing purposes
+    dp_noise = dp_epsilon * np.random.randn(d, 1) # dp_epsilon is the standard deviation of the whole noise now for testing purposes
     
     # plot the noise distribution
     # do experiments with constant numbers.
