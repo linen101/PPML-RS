@@ -623,7 +623,7 @@ def torrent_admm(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None
 
     for ro in range(rounds) :
         w = admm(X, y, S, rho, admm_steps)
-        print(np.linalg.norm(abs(w - wstar)) )
+        #print(np.linalg.norm(abs(w - wstar)) )
         if np.linalg.norm(abs(w - wstar)) < epsilon:  
             break         
         for i in range(m):
@@ -780,14 +780,7 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     w = np.zeros(d)
     w = w.reshape(-1,1)
     
-    # dp noise
-    #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 2d_f
-    #sigma = (np.sqrt(2 * np.log(2 / dp_delta)) / dp_epsilon) * 1
-    #dp_noise = sigma * np.random.randn(d, 1)
-    dp_noise = dp_epsilon * np.random.randn(d, 1) # dp_epsilon is the standard deviation of the whole noise now for testing purposes
-    
-    # plot the noise distribution
-    # do experiments with constant numbers.
+    sigma = dp_epsilon
     for i in range(m):
         _,ni = X[i].shape
         S[i] = np.diagflat(np.ones(ni))
@@ -800,8 +793,9 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
             break
         else:
     #for iteration in range(rounds): 
-            w = admm(X, y, S, rho, admm_steps) + dp_noise
-            #print(np.linalg.norm(abs(w - dp_noise - wstar)) )
+            w = admm_analyze_gauss(X, y, S, rho, admm_steps, sigma) 
+            #w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
+            print(np.linalg.norm(abs(w  - wstar)) )
             for i in range(m):
                 # Compute dot product <w,x>
                 dot_prod[i] = np.matmul(X[i].T,w)
@@ -810,5 +804,43 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
             S = hard_thresholding_admm(r, 1-beta) 
             iteration= iteration+1      
     #w = admm(X, y, S, rho, admm_steps)
-    print(np.linalg.norm(abs(w - wstar)) )
+    #print(np.linalg.norm(abs(w - wstar)) )
     return w,iteration
+
+
+def admm_analyze_gauss(X, y, S, rho, k, sigma):
+    """_ consensus admm 
+   with analyze gauss from Dwork14
+   _   
+    """
+    # get number of parties, features
+    parties = X.shape[0]
+    d, _ = X[0].shape
+    # Initialize variables
+    u = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
+    w = np.array([np.zeros((d, 1)) for _ in range(parties)], dtype=object)
+    z = np.zeros((d, 1))
+
+    # initialize A, b for each party
+    A = np.empty(parties, dtype=object)
+    b = np.empty(parties, dtype=object)
+    
+    dp_noisex =  sigma*np.random.randn(d**2, 1)
+    dp_noisex = dp_noisex.flatten().reshape(d,d)
+    dp_noisey =  sigma*np.random.randn(d, 1)
+    for i in range(k):
+        znew = np.zeros((d,1))
+        #znew = znew.reshape(-1,1)
+        for j in range(parties):
+            Ahat = X[j]@ S[j]@ X[j].T + rho/2 * np.eye(d) + dp_noisex
+            A[j] = np.linalg.inv(Ahat)
+            b[j] = X[j] @ S[j] @ y[j] + dp_noisey
+            w[j] = A[j] @ ( b[j] + rho/2 * z - 1/2 * u[j] )
+            #print (w[j])
+            znew = znew + w[j]
+            #print(znew)  
+        znew = znew / parties
+        for j in range(parties):
+            u[j] = u[j] + rho *(w[j] - znew)
+        z = znew    
+    return z 

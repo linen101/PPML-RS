@@ -9,19 +9,23 @@ module_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 if module_path not in sys.path:
     sys.path.append(module_path)
 from synthetic.strategic_corruptions import rotate_w_arbitrary , sparse_noise_w_arbitrary , interpolate_w_arbitrary, strategic_corruption_scaled, rotate_w_partial
-from synthetic.toy_dataset import generate_synthetic_dataset
+from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
 from realdata.real_data import load_and_process_gas_sensor_data
 from torrent.torrent import  torrent, torrent_ideal, torrent_admm, split_matrix, split_matrix_Y
 from decimal import *
+from stir.irls_regressors import irls_init, admm_huber
 getcontext().prec = 4
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
+def cosine_similarity(w1, w2):
+    return np.dot(w1, w2.T)[0, 0] / (np.linalg.norm(w1) * np.linalg.norm(w2))
+
 def run_tests_huber_d(num_trials=10):
     # Define test size and noise parameters
-    n = 1000  # Number of samples
-    alpha_init= 0.1
+    n = 2000  # Number of samples
+    alpha_init= 0.4
     beta = alpha_init + 0.1  # filter size
-    d_values = [10, 50, 100, 150, 200, 250, 300]  # Different dimensions
+    d_values = [10, 50, 100, 300, 500]  # Different dimensions
     sigma = 0.1  # Noise level
     test_perc = 0.2  # Test set percentage
     epsilon = 0.1  # Convergence threshold
@@ -30,7 +34,7 @@ def run_tests_huber_d(num_trials=10):
     theta = np.pi  # Rotation
     variance = 0.1 #, interpolation
     mixing = 0.5 #interpolation
-    additive = 0.9
+    additive = 10
     multiplicative = 0.1
     sparsity = 0.2
     
@@ -59,8 +63,8 @@ def run_tests_huber_d(num_trials=10):
             #w_corrupt =rotate_w_arbitrary(w_star) 
             w_corrupt = w_star + 100
             #w_corrupt = w_star * multiplicative
-            Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
-            
+            #Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
+            Y_cor = corrupt_dataset(X_train, Y_train, w_star, alpha_init, sigma)
             ## 
             # Run Torrent
             X_parts = split_matrix(X_train, m, train_size)
@@ -73,11 +77,11 @@ def run_tests_huber_d(num_trials=10):
             iters_d[i] += iter_count
             print(iter_count)
             # Run Huber Regression
-            huber = HuberRegressor( epsilon=1.35, max_iter=500, alpha=0.1, warm_start=False, fit_intercept=False, tol=0.1).fit(X_train.T, Y_cor.ravel())
-            w_huber = huber.coef_
-            #w_huber, _ = irls_init(X_train, Y_cor, delta=1.345, max_iterations=100, tol=epsilon, scheme='HUBER', sigma=sigma, w_star=w_star)
-            
-            #w_huber, it_huber = admm_huber(X_train, Y_cor, delta=1.345, rho=1.0, max_iter=1000, tol=0.2, w_star=w_star)
+            #huber = HuberRegressor( epsilon=1.35, max_iter=10, alpha=0.1, warm_start=False, fit_intercept=False, tol=0.1).fit(X_train.T, Y_cor.ravel())
+            #w_huber = huber.coef_
+            #w_huber = w_huber.reshape(-1,1)
+            w_huber, _ = irls_init(X_train, Y_cor, delta=1.345, max_iterations=robust_rounds, tol=epsilon, scheme='HUBER', sigma=sigma, w_star=w_star)
+            ##_huber, it_huber = admm_huber(X_train, Y_cor, delta=1.345, rho=1.0, max_iter=1000, tol=0.2, w_star=w_star)
             w_errors_d_huber[i] += np.linalg.norm(w_huber - w_star)
             #iters_d_huber[i] = it_huber
             ##
@@ -175,8 +179,8 @@ def run_tests_huber_d(num_trials=10):
 def run_tests_huber_alpha(num_trials=10):
     # Define test ssize and noise parameters
     n = 1000  # Number of samples
-    dimension = 300
-    alpha_values = [ 0.1, 0.2, 0.3, 0.4 ]  # Corruption rates
+    dimension = 10
+    alpha_values = [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.65 ]  # Corruption rates
     sigma = 0.1  # Noise level
     test_perc = 0.2  # Test set percentage
     epsilon = 0.1  # Convergence threshold
@@ -185,8 +189,8 @@ def run_tests_huber_alpha(num_trials=10):
     theta = np.pi  # Rotation
     variance = 0.1 #, interpolation
     mixing = 0.5 #interpolation
-    additive = 0.9
-    multiplicative = 0.1
+    additive = 10
+    multiplicative = 10
     sparsity = 0.2
     
     # Initialize lists to store results
@@ -211,10 +215,11 @@ def run_tests_huber_alpha(num_trials=10):
             #w_corrupt = sparse_noise_w_arbitrary(w_star) # add sparse noise in arbitrary dimensions
             # w_corrupt = np.random.uniform(-10, 10, (dimension, 1))
             #w_corrupt = rotate_w_arbitrary(w_star)
-            w_corrupt = w_star + additive
+            w_corrupt = multiplicative*w_star + additive
             #w_corrupt = w_star * multiplicative
             #w_corrupt = 1/w_star + 10   
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
+            #Y_cor = corrupt_dataset(X_train, Y_train, w_star, alpha, sigma)
             
             # Run Torrent
             X_parts = split_matrix(X_train, m, train_size)
@@ -228,20 +233,18 @@ def run_tests_huber_alpha(num_trials=10):
             iters_alpha[j] += iter_count
             
             # Run Huber Regression
-            huber = HuberRegressor( epsilon=1.35, max_iter=500, alpha=0.1, warm_start=False, fit_intercept=False, tol=0.1).fit(X_train.T, Y_cor.ravel())
-            w_huber = huber.coef_
-            #w_huber, _ = irls_init(X_train, Y_cor, delta=1.345, max_iterations=100, tol=epsilon, scheme='HUBER', sigma=sigma, w_star=w_star)
+            #huber = HuberRegressor( epsilon=1.35, max_iter=500, alpha=0.1, warm_start=False, fit_intercept=False, tol=0.1).fit(X_train.T, Y_cor.ravel())
+            #w_huber = huber.coef_
+            #w_huber = w_huber.reshape(-1,1)
+            w_huber, _ = irls_init(X_train, Y_cor, delta=1.345, max_iterations=robust_rounds, tol=epsilon, scheme='HUBER', sigma=sigma, w_star=w_star)
             #w_huber, it_huber_a = admm_huber(X_train, Y_cor, delta=1.345, rho=1.0, max_iter=1000, tol=0.2, w_star=w_star)
             w_errors_alpha_huber[j] += np.linalg.norm(w_huber - w_star)
             #iters_alpha_huber[j] = it_huber_a
-# Compute averages
     w_errors_alpha_torrent /= num_trials
     w_errors_alpha_huber /= num_trials
     iters_alpha = (iters_alpha // num_trials) + 1
-           
-# show scale3d plots together for error with corruption
-    ###############################
-    
+
+    # show scaled plots
     fig, (ax2, ax1) = plt.subplots(2, 1, sharex=True, figsize=(8, 5), gridspec_kw={'height_ratios': [1, 1]})
 
     # Bottom plot (for small values)
@@ -282,10 +285,8 @@ def run_tests_huber_alpha(num_trials=10):
     fig.legend(loc='center', ncol=2, fontsize=12)
     plt.show()
         
-    ######
     
-### errors
-
+    ### errors
     plt.figure(figsize=(8, 5))
     plt.plot(alpha_values, w_errors_alpha_torrent, marker='o', linestyle="dashed", label='Torrent $w_{error}$', color='palevioletred')
     plt.plot(alpha_values, w_errors_alpha_huber, marker='s', linestyle="dashed", label='Huber $w_{error}$', color='teal')
@@ -305,7 +306,7 @@ def run_tests_huber_alpha(num_trials=10):
     plt.show()
 
     
-### iterations
+    ### iterations
 
     plt.figure()
     plt.plot(alpha_values, iters_alpha, marker='o', color="palevioletred", linestyle="dashed", label='Iterations')
@@ -325,7 +326,7 @@ def run_tests_huber_alpha(num_trials=10):
     plt.show()    
 
 # Run the tests with averaging
-num_trials = 2
-#run_tests_huber_d(num_trials)
-run_tests_huber_alpha(num_trials)
+num_trials = 10
+run_tests_huber_d(num_trials)
+#run_tests_huber_alpha(num_trials)
 
