@@ -3,6 +3,7 @@
 import numpy as np
 import math
 from numpy.linalg import eigh, inv
+import random
 
 #import pyproximal
 #from pyproximal.optimization.primal import ADMML2
@@ -265,6 +266,22 @@ def torrent_intermediate(X, y, beta, epsilon, max_iters=10):
     return w, iteration, w_history, S_history
 
 #TORRENT ADMM
+
+def count_smaller_than(residuals, m):
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = residual < m
+        count = count + c
+    return int(count)
+
+def count_greater_than(residuals, m):
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = residual > m
+        count = count + c
+    return int(count)
 def q_quantile(r, q):
     """_summary_
 
@@ -280,9 +297,123 @@ def q_quantile(r, q):
     
     # Compute the q-quantile of the flattened array
     qquant = np.quantile(rvalues, q)
-    
     return qquant
 
+def dist_quantile(r, q):
+    #print(f'residualstor:{r}')
+    n = sum(ri.size for ri in r)
+    #print(f'samples:{n}')
+    
+    m = len(r)
+    #print(f'parties:{m}')
+    
+    quantile = int(np.ceil(q * (n)))
+        
+    # min positive value in domain
+    step = 2**(-16)
+    #print(f'step:{step}')
+    alpha = step
+    
+    # max value in domain
+    beta = 100
+    less_than_player = np.zeros(m, dtype=int)
+    greater_than_player = np.zeros(m, dtype=int)
+
+    for i in range(16):
+        less_than_sum = int(0)
+        greater_than_sum = int(0)
+        qvalue = ((alpha + beta )/2) 
+        #print(qvalue)
+        for j in range(m):
+            less_than_player[j] = count_smaller_than(r[j], qvalue) 
+            greater_than_player[j] = count_greater_than(r[j], qvalue) 
+            less_than_sum += less_than_player[j]
+            greater_than_sum += greater_than_player[j]  
+        if (less_than_sum >= quantile):
+            beta = qvalue - step
+
+        if (greater_than_sum >= n - quantile + 1):
+            alpha = qvalue + step  
+
+        if ((less_than_sum <= quantile-1) & (greater_than_sum <= n - quantile)):
+            print('Quantile found')
+            print(qvalue)
+            break     
+    return(qvalue)
+def compute_rank(residuals, x):
+    # local computation of the rank of a subrange
+    # residuals is the local residuals of party i
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = bool(residual < x)
+        #print(f'c is {c}')
+        count = count + c
+    return int(count)
+
+def compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e):
+    u = int(0)
+    for i in range(parties):
+        rank = compute_rank(r[i], m)
+        u += rank
+    if (u < quantile):
+        #print(f'(upper range) Number of elements less than {m} is {u}')
+        wl_beta = 1
+        wu_alpha = (math.exp(dp_e*(u - quantile)))
+    else:
+        #print(f'(lower range) Number of elements less than {m} is {u}')
+        wl_beta = (math.exp(dp_e*(quantile - u)))
+        wu_alpha = 1
+    return (wu_alpha, wl_beta)            
+        
+def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
+    M = (np.zeros(2))  
+    M[0] = w_alpham
+    M[1] = w_mbeta + w_alpham
+    t = random.uniform(0+step,1+step)
+    #print(f't is :{t}')
+    #t = random.getrandbits(32)
+    r = M[1] * t
+    #print (f'r is: {r.info()}')
+    il = 0
+    iu = 1
+    while (il < iu):
+        #im = math.floor((il+iu)/2)
+        c = M[0] < r
+        if (c==1):
+            il = 1
+        else:
+            iu = 0   
+    if (il==0):
+        #print(f'choose lower')
+        return (alpha, m-step)
+    else:       
+        return (m+step, beta)
+    
+def dp_dist_quantile(r, q, dp_e=1):
+    n = sum(ri.size for ri in r)    
+    parties = len(r)    
+    quantile = int(np.ceil(q * (n)))
+    
+    bit_precision_dec = 16
+    bit_precision_total = 32
+    
+    # step in domain (e.g. in integers step=1)
+    step = 2 ** (-bit_precision_dec)
+    
+    # min positive value in domain
+    alpha = step
+    # max value in domain
+    #beta = fxp(2**(bit_precision_total - bit_precision_dec -1))
+    beta = 100
+    for i in range(bit_precision_total):
+        # suggested q rank element
+        m = (alpha + beta)/2
+        #print(m)
+        # weights matrix
+        w_alpham, w_mbeta = compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e)
+        alpha, beta = select_range(w_alpham, w_mbeta, alpha, beta, m, step)
+    return(m)
 
 def hard_thresholding_admm(r, q):
     """_summary_
@@ -296,9 +427,9 @@ def hard_thresholding_admm(r, q):
     """
     # get number of parties
     m = r.shape[0]
-    
     # compute q-quantile of residual errors
-    quant = q_quantile(r, q)
+    quant = dp_dist_quantile(r, q)
+    #print(f'Torrent quantile:{quant}')
     S = np.empty(m, dtype=object)
     for i in range(m):
         S[i] = np.array([1 if value < quant else 0 for value in r[i]])
@@ -346,16 +477,18 @@ def torrent_admm(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None
     for ro in range(rounds) :
         w = admm(X, y, S, rho, admm_steps)
         #print(np.linalg.norm(abs(w - wstar)) )
-        if wstar is not None:
-            if np.linalg.norm(abs(w - wstar)) < epsilon:  
-                break         
+        #if wstar is not None:
+            #if np.linalg.norm(abs(w - wstar)) < epsilon:  
+            #    print("here!")
+            #    break         
         for i in range(m):
             # Compute dot product <w,x>
             dot_prod[i] = np.matmul(X[i].T,w)
             # Compute residuals r
             r[i] = abs(dot_prod[i] - y[i])            #y - wx
-        S = hard_thresholding_admm(r, 1-beta)       
+        S = hard_thresholding_admm(r, 1-beta)      
     return w,ro
+
 def admm(X, y, S, rho, k):
     """_ consensus admm 
     where 
@@ -399,13 +532,14 @@ def admm(X, y, S, rho, k):
             znew = znew + w[j]
             #print(znew)  
         znew = znew / parties
-        print("z intermediate:", [elem[0] for elem in znew])
+        #print("z intermediate:", [elem[0] for elem in znew])
         for j in range(parties):
             u[j] = u[j] + rho *(w[j] - znew)
         z = znew    
     return z       
 
 #TORRENT DP 
+
 
 def gaussian_mechanism(X, y, epsilon, delta, B_y, w_torrent):
     """
@@ -515,9 +649,9 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
             break
         else:
     #for iteration in range(rounds): 
-            w = admm_analyze_gauss(X, y, S, rho, admm_steps, sigma) 
-            #w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
-            #print(np.linalg.norm(abs(w  - wstar)) )
+            #w = admm_analyze_gauss(X, y, S, rho, admm_steps, sigma) 
+            w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
+            print(f'float error is: {np.linalg.norm(abs(w - wstar))}' )
             for i in range(m):
                 # Compute dot product <w,x>
                 dot_prod[i] = np.matmul(X[i].T,w)

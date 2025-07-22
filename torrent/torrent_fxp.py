@@ -2,18 +2,80 @@
 import numpy as np
 import sys
 import os
+import math
+import random
 module_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 if module_path not in sys.path:
     sys.path.append(module_path)
 from fixed_point.fixed_point_helpers import *    
 from synthetic.toy_dataset import *
-from torrent import split_matrix, split_matrix_Y, torrent_admm, q_quantile
+#from torrent import split_matrix, split_matrix_Y, torrent_admm, q_quantile
 
+
+def count_smaller_than(residuals, m):
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = bool(residual < m)
+        count = count + c
+    return int(count)
+
+def count_greater_than(residuals, m):
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = residual > m
+        count = count + c
+    return int(count)
+
+def fxp_dist_quantile(r, q):
+    n = sum(ri.size for ri in r)    
+    m = len(r)    
+    quantile = int(np.ceil(q * (n)))
+    
+    bit_precision_dec = FXP_CONFIG.get("n_frac", 0)
+    bit_precision_total = FXP_CONFIG.get("n_word", 0)
+    # min positive value in domain
+    step = fxp(2 ** (-bit_precision_dec))
+    alpha = step
+    # alpha = 0
+    # max value in domain
+    beta = fxp(2**(bit_precision_total - bit_precision_dec -1))
+    #beta = 10
+    less_than_player = np.zeros(m, dtype=int)
+    greater_than_player = np.zeros(m, dtype=int)
+
+    for i in range(bit_precision_total):
+        less_than_sum = int(0)
+        greater_than_sum = int(0)
+        qvalue = (alpha + beta)/2
+        #print(qvalue)
+        for j in range(m):
+            less_than_player[j] = count_smaller_than(r[j], qvalue) 
+            greater_than_player[j] = count_greater_than(r[j], qvalue) 
+            less_than_sum += less_than_player[j]
+            greater_than_sum += greater_than_player[j]
+        #print(less_than_sum)
+        #print(greater_than_sum)    
+        if (less_than_sum >= quantile):
+            beta = qvalue - step
+            #print('less')
+            #print(qvalue)
+        if (greater_than_sum >= n - quantile + 1):
+            alpha = qvalue + step  
+            #print('more')
+            #print(qvalue)
+        if ((less_than_sum <= quantile-1) & (greater_than_sum <= n - quantile)):
+            print('Quantile found')
+            print(qvalue)
+            break     
+    return(qvalue)
 
 def fxp_quantile(r, q):
+    #print(f'residuals1:{r}')
     n = sum(ri.size for ri in r)
-    print(n)
-    rvalues = np.empty(n)
+    #print(n)
+    rvalues = fxp(np.empty(n))
     m = len(r)
     ctr = 0
     for i in range (m):
@@ -29,52 +91,103 @@ def fxp_quantile(r, q):
     #print(rvalues)
     sorted_rvalues = np.sort(rvalues)
     #print(sorted_rvalues)
-    idx = int(np.ceil(q * (n - 1)))
-    q = sorted_rvalues[idx]
+    idx = int(np.ceil(q * (n-1)))
+    qvalue = sorted_rvalues[idx]
     #print(q.info())
-    return(q)
+    return(qvalue)
 
-# ---- EXAMPLE ----
+## DP with FXP 
+
+def compute_rank(residuals, x):
+    # local computation of the rank of a subrange
+    # residuals is the local residuals of party i
+    count = int(0)
+    for i, residual in enumerate(residuals):
+        #def _(i):
+        c = bool(residual < x)
+        #print(f'c is {c}')
+        count = count + c
+    return int(count)
+
+def compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e):
+    u = int(0)
+    for i in range(parties):
+        rank = compute_rank(r[i], m)
+        u += rank
+    if (u < quantile):
+        #print(f'(upper range) Number of elements less than {m} is {u}')
+        wl_beta = fxp(1)
+        wu_alpha = fxp(math.exp(dp_e*(u - quantile)))
+    else:
+        #print(f'(lower range) Number of elements less than {m} is {u}')
+        wl_beta = fxp(math.exp(dp_e*(quantile - u)))
+        wu_alpha = fxp(1)
+    return (wu_alpha, wl_beta)            
+        
+def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
+    M = fxp(np.zeros(2))  
+    M[0] = w_alpham
+    M[1] = w_mbeta + w_alpham
+    t = random.uniform(0+step,1+step)
+    #print(f't is :{t}')
+    #t = random.getrandbits(32)
+    r = M[1] * t
+    #print (f'r is: {r.info()}')
+    il = 0
+    iu = 1
+    while (il < iu):
+        #im = math.floor((il+iu)/2)
+        c = M[0] < r
+        if (c==1):
+            il = 1
+        else:
+            iu = 0   
+    if (il==0):
+        #print(f'choose lower')
+        return (alpha, m-step)
+    else:       
+        return (m+step, beta)
+    
+def dp_fxp_dist_quantile(r, q, dp_e=1):
+    n = sum(ri.size for ri in r)    
+    parties = len(r)    
+    quantile = int(np.ceil(q * (n)))
+    
+    bit_precision_dec = FXP_CONFIG.get("n_frac", 0)
+    bit_precision_total = FXP_CONFIG.get("n_word", 0)
+    
+    # step in domain (e.g. in integers step=1)
+    step = fxp(2 ** (-bit_precision_dec))
+    
+    # min positive value in domain
+    alpha = step
+    # max value in domain
+    #beta = fxp(2**(bit_precision_total - bit_precision_dec -1))
+    beta = 100
+    for i in range(bit_precision_total):
+        # suggested q rank element
+        m = (alpha + beta)/2
+        #print(m)
+        # weights matrix
+        w_alpham, w_mbeta = compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e)
+        alpha, beta = select_range(w_alpham, w_mbeta, alpha, beta, m, step)
+    return(m)
 """
-
+# ---- EXAMPLE ----
 # Create example fixed-point matrices
 np.random.seed(42)
-mat1 = np.random.randn(3,1)  # 3x1 matrix
+mat1 = np.random.uniform(low=0, high=100, size=20)  # 3x1 matrix
+#mat1 = np.random.randn(3,1)  # 2x1 matrix
+
 mat1_fxp= fxp(mat1)
-#print(mat1_fxp.info())
-mat2 = np.random.randn(3,1)  # 2x1 matrix
+mat2 = np.random.randn(10,1)  # 2x1 matrix
 mat2_fxp= fxp(mat2)
 r = [mat1_fxp, mat2_fxp]
-q = fxp_quantile(r, 0.5, 6)
-print(q)
-r = [mat1, mat2]
-#print(r)
-print(abs(mat1))
+q1 = fxp_quantile(r, 0.5)
+q2 = fxp_dist_quantile(r, 0.5)
+q3 = dp_fxp_dist_quantile(r, 0.5)
 
-print(mat1_fxp)
-mat1_flat_fxp = mat1_fxp.flatten()
-mat1_flat_fxp_abs = abs(mat1_flat_fxp)
-mat1_sort= np.sort(mat1_flat_fxp_abs)
-print(mat1_sort)
-r_fxp = [mat1_fxp, mat2_fxp]  # list of matrices
-r_fxp_flat = [mat.flatten() for mat in r_fxp]
-print(r_fxp_flat)
-X=np.matmul(mat1_fxp, mat2_fxp)
-print(X)
-Xinv= np.linalg.inv(X)
-np.concatenate(r)
-#r_fxp_flat_concat = np.concatenate(r_fxp_flat)
-#print(r_fxp_flat_concat)
-
-#print(r_fxp)
-# Compute median (0.5 quantile)
-#smedian = q_quantile(r, q=0.5)
-#median_fxp = fxp_quantile(r_fxp, q=0.5, n_frac=16)
-
-#print("median:", median)
-#print("Fixed-point median (as Fxp):", median_fxp)
-#print("Underlying fixed-point integer value:", median_fxp.val)
-#print("Float equivalent:", median_fxp.get_val())
+print(f'fxp quantile: {q1}, fxp distributeed: {q2}, dp fxp distributeed: {q3}')
 """
 def hard_thresholding_admm(r, q):
     """_summary_
@@ -91,6 +204,7 @@ def hard_thresholding_admm(r, q):
     
     # compute q-quantile of residual errors
     quant = fxp_quantile(r, q)
+    #print(f'Torrent fxp quantile:{quant}')
     S = np.empty(m, dtype=object)
     for i in range(m):
         S[i] = np.array([1 if value < quant else 0 for value in  r[i].flatten()])
@@ -121,9 +235,9 @@ def admm_fxp(X, y, S, rho, k):
     parties = X.shape[0]
     d, _ = X[0].shape
     # Initialize variables
-    u = fxp(np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
-    w = fxp(np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
-    z = fxp(np.zeros((d, 1)))
+    u = (np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
+    w = (np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
+    z = (np.zeros((d, 1)))
 
     # initialize A, b for each party
     A = np.empty(parties, dtype=object)
@@ -145,13 +259,13 @@ def admm_fxp(X, y, S, rho, k):
             znew = znew + w[j]
             #print(znew)  
         znew = znew / parties
-        print("z intermediate:",  znew)
+        #print("z intermediate:",  znew)
         for j in range(parties):
             u[j] = u[j] + rho  *(w[j] - znew)
         z = znew    
     return z   
 
-def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None):
+def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_e=0.01):
     """_summary_
 
     Args:
@@ -166,6 +280,9 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
     Returns:
         _type_: model, rounds
     """
+    # Gaussian noise
+    sigma = dp_e
+    
     # get number of parties
     m = X.shape[0]
     
@@ -186,11 +303,12 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
 
     for i in range(m):
         _,ni = X[i].shape
-        S[i] = fxp(np.diagflat(np.ones(ni)))
+        S[i] = np.diagflat(np.ones(ni))
 
     for ro in range(rounds) :
-        w = admm_fxp(X, y, S, rho, admm_steps)
-        #print(np.linalg.norm(abs(w - wstar)) )
+        #w = admm_fxp(X, y, S, rho, admm_steps)
+        w = admm_fxp(X, y, S, rho, admm_steps) + (sigma*np.random.randn(d, 1))
+        print(f'fxp error is: {np.linalg.norm(abs(w - wstar))}' )
         if wstar is not None:
             if np.linalg.norm(abs(w - wstar)) < epsilon:  
                 break         
@@ -199,6 +317,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
             dot_prod[i] = np.matmul(X[i].T,w)
             # Compute residuals r
             r[i] = abs(dot_prod[i] - y[i])          #y - wx
+            #print(f'res in tor: {r[i]}')
         S = hard_thresholding_admm(r, 1-beta)       
     return w,ro
 
@@ -221,7 +340,7 @@ w, rounds = torrent_admm(X, y, beta=0.2, epsilon=0.1, rho=1, admm_steps=5, round
 print("Recovered w (float):", [elem[0] for elem in w])
 print("Rounds:", rounds)
 """
-
+"""
 # Example2
 X, y, X_test, y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_percentage)
 
@@ -244,3 +363,5 @@ w, rounds = torrent_admm_fxp(Xdist_fxp, ydist_fxp, beta=0.1, epsilon=0.1, rho=1,
 
 print("torrent:")
 w, rounds = torrent_admm(Xdist, ydist, beta=0.1, epsilon=0.1, rho=1, admm_steps=5, rounds=5)
+"""
+

@@ -68,6 +68,45 @@ def ht_test_quantiles(r, k):
     
     return subset_indices, q_value
 
+
+def torrent_ideal(X, y, beta, epsilon, max_iters, w_star, w_iter=False):  
+    """ 
+    Parameters:
+    - Training data: {X, Y}
+    - step length size: \eta
+    - thresholding parameter: beta
+    - tolerance: epsilon
+    - real model: w_star
+    Returns:
+    - estimated weights: w
+    """ 
+    # initialize parameters w_0 = 0, S_0 = [n], t = 0, r_0 = y
+    iteration_ideal = 0
+    d, n = X.shape
+    S = np.arange(n)  # Create an array with values from 0 to n-1
+    w = np.zeros(d)
+    w = w.reshape(-1,1)
+    w_per_iteration = []
+    while np.linalg.norm(abs(w - w_star)) > epsilon :
+        w = update_fc(X,y, S)
+        w_per_iteration.append(w.copy())
+        # Compute dot product <w,x>
+        dot_prod = X.transpose().dot(w)
+        # Compute residuals r
+        r = dot_prod - y            #y - wx
+        # Keep only 1-beta datapoints for the next iteration
+        S = hard_thresholding(r,math.ceil((1-beta)*n))
+        iteration_ideal = iteration_ideal + 1
+        if iteration_ideal > max_iters:
+            break
+    if w_iter:
+        return w, iteration_ideal, w_per_iteration  
+    else:
+        return w, iteration_ideal 
+
+
+def torrent_intermediate(X, y, beta, epsilon, max_iters=10):
+
 def torrent_rg(X, y,  beta, epsilon, max_iters=10, ridge=10):
     """ 
     Parameters:

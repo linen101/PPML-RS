@@ -15,6 +15,7 @@ from synthetic.strategic_corruptions import strategic_corruption_scaled
 from synthetic.toy_dataset import generate_synthetic_dataset
 from torrent.torrent import torrent_dp, torrent, torrent_admm_dp, split_matrix, split_matrix_Y, torrent_admm
 from decimal import *
+from plots.plots_dp import plot_metric_vs_d, plot_metric_vs_alpha
 
 """ The error is measured on the test set. We measure the
 root mean square error (RMSE) normalized by the range of the tar-
@@ -24,45 +25,7 @@ room temperature"""
 getcontext().prec = 4
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
-# Plot metrics d
-def plot_metric_vs_d(errors_matrix, ylabel, dp_noise, d_values, alpha_init, sigma, n):
-    # Plot dimension
-    plt.figure(figsize=(10, 6))
-    colors = cm.viridis(np.linspace(0, 1, len(dp_noise)))
-    line_styles = ['dashed', 'dotted', 'dashdot', (0, (3, 1, 1, 1)), (0, (1, 1))]
-    for e, noise in enumerate(dp_noise):
-        errors = errors_matrix[e]
-        plt.plot(d_values, errors, label=f'$noise = {noise}$',
-                 color=colors[e], linestyle=line_styles[e % len(line_styles)], linewidth=2)
-        for x, y in zip(d_values, errors):
-            plt.text(x, y + 0.005, f'{y:.3f}', ha='center', va='bottom', fontsize=9, color=colors[e])
-    plt.xlabel('Dimension $(d)$', fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.title(f'Strategic Corruption with DP (n={n}, β={alpha_init}, σ={sigma})', fontsize=14)
-    plt.legend()
-    plt.grid(False)
-    plt.tight_layout()
-    plt.show()
 
-# Plot metrics alpha
-def plot_metric_vs_alpha(errors_matrix, ylabel, dp_noise, alpha_values, dimension, sigma, n):
-    # Plot dimension
-    plt.figure(figsize=(10, 6))
-    colors = cm.viridis(np.linspace(0, 1, len(dp_noise)))
-    line_styles = ['dashed', 'dotted', 'dashdot', (0, (3, 1, 1, 1)), (0, (1, 1))]
-    for e, noise in enumerate(dp_noise):
-        errors = errors_matrix[e]
-        plt.plot(alpha_values, errors, label=f'$noise = {noise}$',
-                 color=colors[e], linestyle=line_styles[e % len(line_styles)], linewidth=2)
-        for x, y in zip(alpha_values, errors):
-            plt.text(x, y + 0.0005, f'{y:.3f}', ha='center', va='bottom', fontsize=9, color=colors[e])
-    plt.xlabel(f'Corruption $(\\beta)$', fontsize=14)
-    plt.ylabel(ylabel, fontsize=14)
-    plt.title(f'Strategic Corruption with DP (n={n}, d={dimension}, σ={sigma})', fontsize=14)
-    plt.legend()
-    plt.grid(False)
-    plt.tight_layout()
-    plt.show()
 
 def cosine_similarity(w1, w2):
     return np.dot(w1, w2.T)[0, 0] / (np.linalg.norm(w1) * np.linalg.norm(w2))

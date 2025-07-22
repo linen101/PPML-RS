@@ -13,6 +13,7 @@ module_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 if module_path not in sys.path:
     sys.path.append(module_path)
 
+
 def add_ideal(labels):
     return ['ideal ' + label for label in labels]
 
