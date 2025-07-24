@@ -112,16 +112,17 @@ def compute_rank(residuals, x):
 def compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e):
     u = int(0)
     for i in range(parties):
-        rank = compute_rank(r[i], m)
+        rank = compute_rank(r[i], m) # added n here to normalize
         u += rank
     if (u < quantile):
         #print(f'(upper range) Number of elements less than {m} is {u}')
         wl_beta = fxp(1)
-        wu_alpha = fxp(math.exp(dp_e*(u - quantile)))
+        wu_alpha = fxp(math.exp(dp_e*(u - quantile)/n)) # divide by n here to normalize
     else:
         #print(f'(lower range) Number of elements less than {m} is {u}')
-        wl_beta = fxp(math.exp(dp_e*(quantile - u)))
+        wl_beta = fxp(math.exp(dp_e*(quantile - u)/n)) # divide by n here to normalize
         wu_alpha = fxp(1)
+        print(f'(lower range) Number of elements less than {m} is {u} and weight is: {wl_beta}')
     return (wu_alpha, wl_beta)            
         
 def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
@@ -148,7 +149,7 @@ def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
     else:       
         return (m+step, beta)
     
-def dp_fxp_dist_quantile(r, q, dp_e=1):
+def dp_fxp_dist_quantile(r, q, dp_e=0.0625):
     n = sum(ri.size for ri in r)    
     parties = len(r)    
     quantile = int(np.ceil(q * (n)))

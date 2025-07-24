@@ -83,7 +83,7 @@ def run_tests_fxp_d(num_trials=10):
     
 def run_tests_fxp_alpha(num_trials=10):
     # Define test ssize and noise parameters
-    n = 1000  # Number of samples
+    n = 100  # Number of samples
     dimension = 10
     alpha_values = [ 0.1, 0.2, 0.3, 0.4]  # Corruption rates
     sigma = 0.1  # Noise level
@@ -120,7 +120,7 @@ def run_tests_fxp_alpha(num_trials=10):
             y_parts = split_matrix_Y(Y_cor, m, train_size)
             
             beta = alpha + 0.1  # filter size
-            w_torrent, _ = torrent_admm_dp(X_parts, y_parts, beta, epsilon,  rho, 0.1, 0.00001, admm_steps, robust_rounds, w_star)
+            w_torrent, _ = torrent_admm_dp(X_parts, y_parts, beta, epsilon,  rho, 0.01, 0.00001, admm_steps, robust_rounds, w_star)
             w_errors_alpha_torrent[j] += np.linalg.norm(w_torrent - w_star)
             #print(w_errors_alpha_torrent[j])
             
@@ -128,7 +128,7 @@ def run_tests_fxp_alpha(num_trials=10):
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
 
             # can also add dp noise here
-            w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, 0.1)
+            w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, 0.01)
             #print(w_torrent_fxp.info())
             w_errors_alpha_torrent_fxp[j] += np.linalg.norm(w_torrent_fxp - w_star)
             #print(w_errors_alpha_torrent_fxp[j].info())
@@ -144,7 +144,7 @@ def run_tests_fxp_alpha(num_trials=10):
     
 
 # Run the tests with averaging
-num_trials = 5
+num_trials = 2
 #run_tests_fxp_d(num_trials)
 run_tests_fxp_alpha(num_trials)
 
