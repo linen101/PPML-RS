@@ -1,6 +1,7 @@
 import numpy as np
 import fxpmath as fxpmath
 from fxpmath import Fxp
+import math
 
 FXP_CONFIG = dict(signed=True, n_word=32, n_frac=16)
 def fxp(val): return Fxp(val, **FXP_CONFIG)
@@ -15,3 +16,7 @@ def split_matrix_fxp(X_parts, Y_parts):
         
     return  (Xdist_fxp, ydist_fxp)  
 
+x = fxp(-15)
+e = fxp(math.e)
+y = fxp(e**x)
+print(y)

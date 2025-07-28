@@ -112,44 +112,34 @@ def compute_rank(residuals, x):
 def compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e):
     u = int(0)
     for i in range(parties):
-        rank = compute_rank(r[i], m) # added n here to normalize
+        rank = compute_rank(r[i], m) 
         u += rank
     if (u < quantile):
-        #print(f'(upper range) Number of elements less than {m} is {u}')
         wl_beta = fxp(1)
-        wu_alpha = fxp(math.exp(dp_e*(u - quantile)/n)) # divide by n here to normalize
+        wu_alpha = (math.exp(dp_e*(u - quantile))) # divide by n here to normalize
+        #print(f'(upper range) Number of elements less than {m} is {u} and weight is: {wu_alpha} and fxp weight is {fxp(wu_alpha)}')
     else:
         #print(f'(lower range) Number of elements less than {m} is {u}')
-        wl_beta = fxp(math.exp(dp_e*(quantile - u)/n)) # divide by n here to normalize
+        wl_beta = (math.exp(dp_e*(quantile - u))) # divide by n here to normalize
         wu_alpha = fxp(1)
-        print(f'(lower range) Number of elements less than {m} is {u} and weight is: {wl_beta}')
+        #print(f'(lower range) Number of elements less than {m} is {u} and weight is: {wl_beta} and fxp weight is {fxp(wl_beta)}')
     return (wu_alpha, wl_beta)            
         
 def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
-    M = fxp(np.zeros(2))  
-    M[0] = w_alpham
-    M[1] = w_mbeta + w_alpham
+    w_total = w_mbeta + w_alpham
     t = random.uniform(0+step,1+step)
     #print(f't is :{t}')
-    #t = random.getrandbits(32)
-    r = M[1] * t
+    w_total_random = w_total * t
     #print (f'r is: {r.info()}')
-    il = 0
-    iu = 1
-    while (il < iu):
-        #im = math.floor((il+iu)/2)
-        c = M[0] < r
-        if (c==1):
-            il = 1
-        else:
-            iu = 0   
-    if (il==0):
+    c = w_alpham < w_total_random
+    if (c==1):
+        #print(f'choose upper')
+        return (m+step, beta)
+    else:
         #print(f'choose lower')
         return (alpha, m-step)
-    else:       
-        return (m+step, beta)
-    
-def dp_fxp_dist_quantile(r, q, dp_e=0.0625):
+          
+def dp_fxp_dist_quantile(r, q, dp_e=1):
     n = sum(ri.size for ri in r)    
     parties = len(r)    
     quantile = int(np.ceil(q * (n)))
@@ -204,7 +194,7 @@ def hard_thresholding_admm(r, q):
     m = r.shape[0]
     
     # compute q-quantile of residual errors
-    quant = fxp_quantile(r, q)
+    quant = dp_fxp_dist_quantile(r, q)
     #print(f'Torrent fxp quantile:{quant}')
     S = np.empty(m, dtype=object)
     for i in range(m):
