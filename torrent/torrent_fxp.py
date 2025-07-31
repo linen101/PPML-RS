@@ -66,8 +66,8 @@ def fxp_dist_quantile(r, q):
             #print('more')
             #print(qvalue)
         if ((less_than_sum <= quantile-1) & (greater_than_sum <= n - quantile)):
-            print('Quantile found')
-            print(qvalue)
+            #print('Quantile found')
+            #print(qvalue)
             break     
     return(qvalue)
 
@@ -115,15 +115,15 @@ def compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e):
         rank = compute_rank(r[i], m) 
         u += rank
     if (u < quantile):
-        wl_beta = fxp(1)
-        wu_alpha = (math.exp(dp_e*(u - quantile))) # divide by n here to normalize
+        w_beta = fxp(1)
+        w_alpha = (math.exp(dp_e*(u - quantile))) # divide by n here to normalize
         #print(f'(upper range) Number of elements less than {m} is {u} and weight is: {wu_alpha} and fxp weight is {fxp(wu_alpha)}')
     else:
         #print(f'(lower range) Number of elements less than {m} is {u}')
-        wl_beta = (math.exp(dp_e*(quantile - u))) # divide by n here to normalize
-        wu_alpha = fxp(1)
+        w_beta = (math.exp(dp_e*(quantile - u))) # divide by n here to normalize
+        w_alpha = fxp(1)
         #print(f'(lower range) Number of elements less than {m} is {u} and weight is: {wl_beta} and fxp weight is {fxp(wl_beta)}')
-    return (wu_alpha, wl_beta)            
+    return (w_alpha, w_beta)            
         
 def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
     w_total = w_mbeta + w_alpham
@@ -162,6 +162,9 @@ def dp_fxp_dist_quantile(r, q, dp_e=1):
         # weights matrix
         w_alpham, w_mbeta = compute_weights(r, quantile, alpha, beta, m, parties, n, dp_e)
         alpha, beta = select_range(w_alpham, w_mbeta, alpha, beta, m, step)
+        if (alpha==beta):
+            m = alpha
+            break
     return(m)
 """
 # ---- EXAMPLE ----
@@ -174,11 +177,24 @@ mat1_fxp= fxp(mat1)
 mat2 = np.random.randn(10,1)  # 2x1 matrix
 mat2_fxp= fxp(mat2)
 r = [mat1_fxp, mat2_fxp]
-q1 = fxp_quantile(r, 0.5)
-q2 = fxp_dist_quantile(r, 0.5)
-q3 = dp_fxp_dist_quantile(r, 0.5)
+q1 = np.zeros(100)
+q2 = np.zeros(100)
+q3 = np.zeros(100)
+q1_sum = 0
+q2_sum = 0
+q3_sum = 0
+for i in range (100):
+    q1[i] = fxp_quantile(r, 0.5)
+    q2[i] = fxp_dist_quantile(r, 0.5)
+    q3[i] = dp_fxp_dist_quantile(r, 0.5)
+    q1_sum += q1[i]
+    q2_sum += q2[i]
+    q3_sum += q3[i]
 
-print(f'fxp quantile: {q1}, fxp distributeed: {q2}, dp fxp distributeed: {q3}')
+q1_sum /= 100
+q2_sum /= 100
+q3_sum /= 100  
+print(f'fxp quantile: {q1_sum}, fxp distributeed: {q2_sum}, dp fxp distributeed: {q3_sum}')
 """
 def hard_thresholding_admm(r, q):
     """_summary_
@@ -256,7 +272,7 @@ def admm_fxp(X, y, S, rho, k):
         z = znew    
     return z   
 
-def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_e=0.01):
+def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_e=100):
     """_summary_
 
     Args:
@@ -271,8 +287,9 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
     Returns:
         _type_: model, rounds
     """
+    print(f'dp e is: {dp_e}')
     # Gaussian noise
-    sigma = dp_e
+    sigma = 0.1
     
     # get number of parties
     m = X.shape[0]
@@ -299,6 +316,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
     for ro in range(rounds) :
         #w = admm_fxp(X, y, S, rho, admm_steps)
         w = admm_fxp(X, y, S, rho, admm_steps) + (sigma*np.random.randn(d, 1))
+        print(f'sigma is: {sigma}')
         print(f'fxp error is: {np.linalg.norm(abs(w - wstar))}' )
         if wstar is not None:
             if np.linalg.norm(abs(w - wstar)) < epsilon:  

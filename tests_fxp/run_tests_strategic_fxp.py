@@ -20,10 +20,10 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_d(num_trials=10):
     # Define test size and noise parameters
-    n = 200  # Number of samples
+    n = 10000  # Number of samples
     alpha_init= 0.2
     beta = alpha_init + 0.1  # filter size
-    d_values = [20, 30]  # Different dimensions
+    d_values = [100, 200]  # Different dimensions
     sigma = 0.1  # Noise level
     test_perc = 0.2  # Test set percentage
     epsilon = 0.1  # Convergence threshold
