@@ -272,7 +272,7 @@ def admm_fxp(X, y, S, rho, k):
         z = znew    
     return z   
 
-def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_e=100):
+def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w):
     """_summary_
 
     Args:
@@ -287,9 +287,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
     Returns:
         _type_: model, rounds
     """
-    print(f'dp e is: {dp_e}')
-    # Gaussian noise
-    sigma = 0.1
+    print(f'dp w is: {dp_w}')
     
     # get number of parties
     m = X.shape[0]
@@ -308,17 +306,16 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
     
     # initialize parameters w_0 = 0, S_0 = [n]
     w = fxp(np.zeros((d, 1)))
-
+    iteration=0
     for i in range(m):
         _,ni = X[i].shape
         S[i] = np.diagflat(np.ones(ni))
 
     for ro in range(rounds) :
         #w = admm_fxp(X, y, S, rho, admm_steps)
-        w = admm_fxp(X, y, S, rho, admm_steps) + (sigma*np.random.randn(d, 1))
-        print(f'sigma is: {sigma}')
-        print(f'fxp error is: {np.linalg.norm(abs(w - wstar))}' )
+        w = admm_fxp(X, y, S, rho, admm_steps) + (dp_w*np.random.randn(d, 1))
         if wstar is not None:
+            print(f'fxp ols error is: {np.linalg.norm(abs(w - wstar))}' )
             if np.linalg.norm(abs(w - wstar)) < epsilon:  
                 break         
         for i in range(m):
@@ -327,8 +324,119 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= 
             # Compute residuals r
             r[i] = abs(dot_prod[i] - y[i])          #y - wx
             #print(f'res in tor: {r[i]}')
-        S = hard_thresholding_admm(r, 1-beta)       
+        S = hard_thresholding_admm(r, 1-beta)  
+        iteration = iteration + 1     
     return w,ro
+
+def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_noise):
+    """_summary_
+
+    Args:
+        X (_type_): containing parties feature vectors
+        y (_type_): containing parties responses
+        beta (_type_): corruption rate
+        epsilon (_type_): model recovery target error
+        rho (_type_): admm rho
+        admm_steps (_type_): admm rounss
+        rounds (int, optional): torrent rounds
+
+    Returns:
+        _type_: model, rounds
+    """
+    
+    # get number of parties
+    m = X.shape[0]
+    
+    # create empty S matrix
+    S = np.empty(m, dtype=object)
+    
+    # create empty matrices to compute the residual error for each party
+    dot_prod = (np.empty(m, dtype=object))
+    r = (np.empty(m, dtype=object))
+
+    # get number of features
+    d,_ = X[0].shape
+    
+    #n = size(X)
+    
+    # initialize parameters w_0 = 0, S_0 = [n]
+    w = fxp(np.zeros((d, 1)))
+    iteration=0
+    for i in range(m):
+        _,ni = X[i].shape
+        S[i] = np.diagflat(np.ones(ni))
+
+    for ro in range(rounds) :
+        #w = admm_fxp(X, y, S, rho, admm_steps)
+        w = admm_fxp_analyze_gauss(X, y, S, rho, admm_steps, dp_noise)
+        if wstar is not None:
+            print(f'fxp analyze gauss error is: {np.linalg.norm(abs(w - wstar))}' )
+            if np.linalg.norm(abs(w - wstar)) < epsilon:  
+                break         
+        for i in range(m):
+            # Compute dot product <w,x>
+            dot_prod[i] = np.matmul(X[i].T,w)
+            # Compute residuals r
+            r[i] = abs(dot_prod[i] - y[i])          #y - wx
+            #print(f'res in tor: {r[i]}')
+        S = hard_thresholding_admm(r, 1-beta)  
+        iteration = iteration + 1     
+    return w,ro
+
+def admm_fxp_analyze_gauss(X, y, S, rho, k, dp_noise):
+    """_ consensus admm 
+    where 
+    multiple parties compute local models
+    under the constrain that
+    their local models are close to each other (converge to a global model)
+    and this global model has small squared error on their data
+    _
+
+    Args:
+        X (np.marray): m dimensional matrix of the local data samples of each P_i (n,d matrices)
+        y (np.marray): m dimensional matrix of the local labels (n matrices)
+        S (np.marray): m dimensional matrix of the local  weights (diagonal square matrices)
+        rho (int): penalty on the divergence of local and global models
+        k (int): umber of iteratiosn
+        
+    Returns:
+            _type_: _description_    
+    """
+    # get number of parties, features
+    parties = X.shape[0]
+    d, _ = X[0].shape
+    # Initialize variables
+    u = (np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
+    w = (np.array([(np.zeros((d, 1))) for _ in range(parties)], dtype=object))
+    z = (np.zeros((d, 1)))
+
+    # initialize A, b for each party
+    A = np.empty(parties, dtype=object)
+    b = np.empty(parties, dtype=object)
+    #D = np.empty(parties, dtype=object)
+    dp_noisex =  dp_noise*np.random.randn(d**2, 1)
+    dp_noisex = dp_noisex.flatten().reshape(d,d)
+    dp_noisey =  dp_noise*np.random.randn(d, 1)
+    for i in range(k):
+        znew = fxp(np.zeros((d, 1)))
+        #znew = znew.reshape(-1,1)
+        for j in range(parties):
+            #print("X[j].shape =", X[j].shape, "S[j].shape =", S[j].shape, "j=", j, "i=", i)
+            D = np.matmul(X[j], S[j])
+            
+            Ahat = np.matmul(D, X[j].T)  + dp_noisex
+            A[j] = np.linalg.inv(Ahat)
+            b[j] = np.matmul(D, y[j]) + dp_noisey
+            w[j] = np.matmul(A[j], b[j] + rho/2 * z - 1/2 * u[j] )
+            #print (w[j])
+            znew = znew + w[j]
+            #print(znew)  
+        znew = znew / parties
+        #print("z intermediate:",  znew)
+        for j in range(parties):
+            u[j] = u[j] + rho  *(w[j] - znew)
+        z = znew    
+    return z   
 
 
 np.random.seed(42)

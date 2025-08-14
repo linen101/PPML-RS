@@ -642,7 +642,7 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
         S[i] = np.diagflat(np.ones(ni))
     iteration=0
     
-    while np.linalg.norm(abs(w - wstar)) > 0.5:
+    while np.linalg.norm(abs(w - wstar)) > 0.2:
         if iteration > rounds:
             #w = admm(X, y, S, rho, admm_steps) 
             #print(np.linalg.norm(abs(w - wstar)) )
