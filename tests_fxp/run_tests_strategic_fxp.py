@@ -68,7 +68,7 @@ def run_tests_fxp_d(num_trials=10):
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             
             w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_gauss_val)
-            w_errors_d_torrent[j] += np.linalg.norm(w_torrent - w_star)
+            w_errors_d_torrent[i] += np.linalg.norm(w_torrent - w_star)
 
             w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_w_val)
             #print(w_torrent_fxp.info())
