@@ -20,11 +20,12 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_d(num_trials=10):
     # Define test size and noise parameters
-    n = 10000  # Number of samples
+    n = 100000  # Number of samples
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
     d_values = [10, 25, 50, 100]  # Different dimensions
-    dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
+    #dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
+    dp_w = [0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464]     # for n = 100000
     dp_analyze_gauss = [48.44805263, 121.1201316, 242.2402631, 484.4805263] #for n = 100000
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
