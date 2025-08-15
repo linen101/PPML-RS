@@ -289,8 +289,10 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
     """
     print(f'dp w is: {dp_w}')
     # w norm
-    norm_w = np.linalg.norm(fxp(wstar))
-    
+    norm_w = np.linalg.norm((wstar))
+    norm_w_inv = 1/norm_w
+    print(f'norm is: {norm_w}' )
+    print(f'inv norm is: {norm_w_inv}' )
     # get number of parties
     m = X.shape[0]
     
@@ -317,8 +319,11 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
         #w = admm_fxp(X, y, S, rho, admm_steps)
         w = admm_fxp(X, y, S, rho, admm_steps) + (dp_w*np.random.randn(d, 1))
         if wstar is not None:
-            print(f'fxp ols error is: {np.linalg.norm((w - wstar)) / norm_w}' )
-            if np.linalg.norm((w - wstar)) / norm_w < epsilon:  
+            error= np.linalg.norm((w - wstar))
+            error_norm = error * norm_w_inv
+            print(f'fxp unormalized ols error is: {error}' )
+            print(f'fxp normalized ols error is: {error_norm}' )
+            if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
                 break         
         for i in range(m):
             # Compute dot product <w,x>
@@ -345,7 +350,9 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
     Returns:
         _type_: model, rounds
     """
-    norm_w = np.linalg.norm(fxp(wstar))
+    norm_w = np.linalg.norm((wstar))
+    norm_w_inv = 1 / norm_w
+    print(f'dp noise is: {dp_noise}')
     # get number of parties
     m = X.shape[0]
     
@@ -372,8 +379,9 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
         #w = admm_fxp(X, y, S, rho, admm_steps)
         w = admm_fxp_analyze_gauss(X, y, S, rho, admm_steps, dp_noise)
         if wstar is not None:
-            print(f'fxp analyze gauss error is: {np.linalg.norm((w - wstar))/ norm_w }' )
-            if np.linalg.norm((w - wstar))/ norm_w < epsilon:  
+            print(f'fxp unormalised analyze gauss error is: {np.linalg.norm((w - wstar))}' )
+            print(f'fxp normalised analyze gauss error is: {np.linalg.norm((w - wstar))* norm_w_inv }' )
+            if np.linalg.norm((w - wstar))* norm_w_inv < epsilon:  
                 break         
         for i in range(m):
             # Compute dot product <w,x>
