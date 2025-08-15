@@ -289,7 +289,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
     """
     print(f'dp w is: {dp_w}')
     # w norm
-    norm_w = np.linalg.norm(wstar)
+    norm_w = fxp(np.linalg.norm(wstar))
     
     # get number of parties
     m = X.shape[0]
@@ -345,7 +345,7 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
     Returns:
         _type_: model, rounds
     """
-    norm_w = np.linalg.norm(wstar)
+    norm_w = fxp(np.linalg.norm(wstar))
     # get number of parties
     m = X.shape[0]
     
