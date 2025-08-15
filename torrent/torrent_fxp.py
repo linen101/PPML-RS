@@ -321,8 +321,8 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
         if wstar is not None:
             error= np.linalg.norm((w - wstar))
             error_norm = error * norm_w_inv
-            print(f'fxp unormalized ols error is: {error}' )
-            print(f'fxp normalized ols error is: {error_norm}' )
+            #print(f'fxp unormalized ols error is: {error}' )
+            print(f'fxp dp ols error is: {error_norm}' )
             if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
                 break         
         for i in range(m):
@@ -379,8 +379,8 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
         #w = admm_fxp(X, y, S, rho, admm_steps)
         w = admm_fxp_analyze_gauss(X, y, S, rho, admm_steps, dp_noise)
         if wstar is not None:
-            print(f'fxp unormalised analyze gauss error is: {np.linalg.norm((w - wstar))}' )
-            print(f'fxp normalised analyze gauss error is: {np.linalg.norm((w - wstar))* norm_w_inv }' )
+            #print(f'fxp unormalised analyze gauss error is: {np.linalg.norm((w - wstar))}' )
+            print(f'fxp  analyze gauss error is: {np.linalg.norm((w - wstar))* norm_w_inv }' )
             if np.linalg.norm((w - wstar))* norm_w_inv < epsilon:  
                 break         
         for i in range(m):
