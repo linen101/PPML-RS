@@ -20,19 +20,22 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_d(num_trials=10):
     # Define test size and noise parameters
-    n = 10000  # Number of samples
+    n = 100000  # Number of samples
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
     d_values = [10, 25, 50, 100]  # Different dimensions
     
     # dp noise accordingly
-    dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
+    #dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
     #dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
     #dp_w = [0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464]     # for n = 100000
+    dp_w = [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554]      # for n = 100000, ||w*|| > 1
     
-    dp_analyze_gauss = [137.3570815, 542.951538, 1535.698857, 4343.612304]   # for n = 10000, ||w*|| > 1
+    # dp_analyze_gauss = [137.3570815, 542.951538, 1535.698857, 4343.612304]   # for n = 10000, ||w*|| > 1
     #dp_analyze_gauss = [43.43612304, 108.5903076, 217.1806152, 434.3612304]  # for n = 10000
     #dp_analyze_gauss = [48.44805263, 121.1201316, 242.2402631, 484.4805263] #for n = 100000
+    dp_analyze_gauss = [153.2061945, 605.6006578, 1712.897327, 4844.805263]   # for n = 100000, ||w*|| > 1
+    
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
     epsilon = 0.1  # Convergence threshold
