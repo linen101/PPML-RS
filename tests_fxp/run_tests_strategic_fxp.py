@@ -23,7 +23,7 @@ def run_tests_fxp_d(num_trials=10):
     n = 100000  # Number of samples
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
-    d_values = [10, 25, 50, 100]  # Different dimensions
+    d_values = [ 100]  # Different dimensions
     
     # dp noise accordingly
     #dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
@@ -36,7 +36,7 @@ def run_tests_fxp_d(num_trials=10):
     #dp_analyze_gauss = [48.44805263, 121.1201316, 242.2402631, 484.4805263] #for n = 100000
     dp_analyze_gauss = [153.2061945, 605.6006578, 1712.897327, 4844.805263]   # for n = 100000, ||w*|| > 1
     
-    sigma = 0.1  # Noise level
+    sigma = 0.01  # Noise level
     test_perc = 0  # Test set percentage
     epsilon = 0.1  # Convergence threshold
     
