@@ -42,8 +42,8 @@ def run_tests_fxp_d(num_trials=10):
     epsilon = 0.1  # Convergence threshold
     
     # Coruption strategies parameters
-    additive = 10
-    multiplicative = 10
+    additive = 1000
+    multiplicative = 1000
     
     # Initialize lists to store results
     w_errors_d_torrent = np.zeros(len(d_values))
