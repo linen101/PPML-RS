@@ -335,7 +335,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
         iteration = iteration + 1     
     return w,ro
 
-def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_noise):
+def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_noise_x, dp_noise_y):
     """_summary_
 
     Args:
@@ -352,7 +352,7 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
     """
     norm_w = np.linalg.norm((wstar))
     norm_w_inv = 1 / norm_w
-    print(f'dp noise is: {dp_noise}')
+    #print(f'dp noise is: {dp_noise}')
     # get number of parties
     m = X.shape[0]
     
@@ -377,7 +377,7 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
 
     for ro in range(rounds) :
         #w = admm_fxp(X, y, S, rho, admm_steps)
-        w = admm_fxp_analyze_gauss(X, y, S, rho, admm_steps, dp_noise)
+        w = admm_fxp_analyze_gauss(X, y, S, rho, admm_steps, dp_noise_x, dp_noise_y)
         if wstar is not None:
             #print(f'fxp unormalised analyze gauss error is: {np.linalg.norm((w - wstar))}' )
             print(f'fxp  analyze gauss error is: {np.linalg.norm((w - wstar))* norm_w_inv }' )
@@ -393,7 +393,7 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
         iteration = iteration + 1     
     return w,ro
 
-def admm_fxp_analyze_gauss(X, y, S, rho, k, dp_noise):
+def admm_fxp_analyze_gauss(X, y, S, rho, k, dp_noise_x, dp_noise_y):
     """_ consensus admm 
     where 
     multiple parties compute local models
@@ -424,9 +424,9 @@ def admm_fxp_analyze_gauss(X, y, S, rho, k, dp_noise):
     A = np.empty(parties, dtype=object)
     b = np.empty(parties, dtype=object)
     #D = np.empty(parties, dtype=object)
-    dp_noisex =  dp_noise*np.random.randn(d**2, 1)
+    dp_noisex =  dp_noise_x*np.random.randn(d**2, 1)
     dp_noisex = dp_noisex.flatten().reshape(d,d)
-    dp_noisey =  dp_noise*np.random.randn(d, 1)
+    dp_noisey =  dp_noise_y*np.random.randn(d, 1)
     for i in range(k):
         znew = fxp(np.zeros((d, 1)))
         #znew = znew.reshape(-1,1)
