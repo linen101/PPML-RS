@@ -76,7 +76,7 @@ def run_tests_fxp_d(num_trials=10):
             y_parts = split_matrix_Y(Y_cor, m, train_size)
             
             # Use the dp parameter corresponding to this d
-            dp_w_val = dp_w[i]
+            #dp_w_val = dp_w[i]
             dp_noise_x_val = dp_noise_x[i]
             dp_noise_y_val = dp_noise_y[i]
             
