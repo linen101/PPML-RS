@@ -20,7 +20,7 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_d(num_trials=10):
     # Define test size and noise parameters
-    n = 10000  # Number of samples
+    n = 100000  # Number of samples
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
     d_values = [10, 25, 50, 100]  # Different dimensions
@@ -32,10 +32,10 @@ def run_tests_fxp_d(num_trials=10):
     #dp_w = [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554]      # for n = 100000, ||w*|| > 1
     dp_w = [0.5046469554] 
     # 
-    dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
-    dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]
-    #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]
-    #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
+    #dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
+    #dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]
+    dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]
+    dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
     
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
