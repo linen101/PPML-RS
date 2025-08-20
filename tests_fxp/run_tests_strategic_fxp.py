@@ -162,12 +162,12 @@ def run_tests_fxp_alpha(num_trials=10):
             
             w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_noise_x, dp_noise_y)
             w_errors_alpha_torrent[j] += np.linalg.norm(w_torrent - w_star)* norm_w_inv
-            print(f' sum trials error ols: {w_errors_alpha_torrent[j]}')
+            print(f' sum trials error analyze gauss: {w_errors_alpha_torrent[j]}')
 
             ## Run Torrent dp fxp
             w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_w)
             w_errors_alpha_torrent_fxp[j] += np.linalg.norm(w_torrent_fxp - w_star)* norm_w_inv
-            print(f' sum trials error an gauss: {w_errors_alpha_torrent_fxp[j]}')
+            print(f' sum trials error DP OLD: {w_errors_alpha_torrent_fxp[j]}')
             
     w_errors_alpha_torrent /= num_trials
     w_errors_alpha_torrent_fxp /= num_trials
