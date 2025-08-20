@@ -323,8 +323,8 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
             error_norm = error * norm_w_inv
             #print(f'fxp unormalized ols error is: {error}' )
             print(f'DP ols error is: {error_norm}' )
-            if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
-                break         
+            #if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
+            #    break         
         for i in range(m):
             # Compute dot product <w,x>
             dot_prod[i] = np.matmul(X[i].T,w)
@@ -381,8 +381,8 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
         if wstar is not None:
             #print(f'fxp unormalised analyze gauss error is: {np.linalg.norm((w - wstar))}' )
             print(f'fxp  analyze gauss error is: {np.linalg.norm((w - wstar))* norm_w_inv }' )
-            if np.linalg.norm((w - wstar))* norm_w_inv < epsilon:  
-                break         
+        #    if np.linalg.norm((w - wstar))* norm_w_inv < epsilon:  
+        #        break         
         for i in range(m):
             # Compute dot product <w,x>
             dot_prod[i] = np.matmul(X[i].T,w)

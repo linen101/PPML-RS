@@ -184,7 +184,7 @@ def run_tests_fxp_alpha(num_trials=10):
     
 
 # Run the tests with averaging
-num_trials = 2
+num_trials = 10
 #run_tests_fxp_d(num_trials)
 run_tests_fxp_alpha(num_trials)
 

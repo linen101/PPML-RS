@@ -643,11 +643,11 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     iteration=0
     
     while np.linalg.norm(abs(w - wstar)) > 0.2:
-        if iteration > rounds:
+        #if iteration > rounds:
             #w = admm(X, y, S, rho, admm_steps) 
             #print(np.linalg.norm(abs(w - wstar)) )
-            break
-        else:
+        #    break
+        #else:
     #for iteration in range(rounds): 
             #w = admm_analyze_gauss(X, y, S, rho, admm_steps, sigma) 
             w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
