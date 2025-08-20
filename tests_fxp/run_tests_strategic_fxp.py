@@ -20,27 +20,27 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_d(num_trials=10):
     # Define test size and noise parameters
-    n = 100000  # Number of samples
+    n = 10000  # Number of samples
     alpha_init= 0.1
     beta = alpha_init + 0.1  # filter size
     #d_values = [10, 25, 50, 100]  # Different dimensions
-    d_values=[100]
+    d_values=[10]
     # dp noise accordingly
     #dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
     #dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
     #dp_w = [0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464]     # for n = 100000
     #dp_w = [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554]      # for n = 100000, ||w*|| > 1
-    dp_w = [0.5046469554] 
+    dp_w = [0.0491542458] 
     # 
     #dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
     #dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]
     #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]
     #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
-    dp_noise_y = [9689.610525]
-    dp_noise_x = [968.9610525]
+    dp_noise_y = [274.7141631]
+    dp_noise_x = [86.87224608]
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
-    epsilon = 0.1  # Convergence threshold
+    epsilon = 0.1  # Convergence thresholdc
     
     # Coruption strategies parameters
     additive = 10
@@ -88,7 +88,7 @@ def run_tests_fxp_d(num_trials=10):
             #w_errors_d_torrent_fxp[i] += np.linalg.norm(abs(w_torrent_fxp - w_star)) * norm_w_inv
             #print(f' sum trials error: {w_errors_d_torrent_fxp[i]}')
             
-            w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_noise_x_val, dp_noise_x_val)
+            w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_noise_x_val, dp_noise_y_val)
             w_errors_d_torrent[i] += (np.linalg.norm(abs(w_torrent - w_star)) * norm_w_inv)
             print(f' sum trials error an gauss: {w_errors_d_torrent[i]}')
         
@@ -106,7 +106,7 @@ def run_tests_fxp_alpha(num_trials=10):
     # Define test ssize and noise parameters
     n = 10000  # Number of samples
     dimension = 10
-    alpha_values = [ 0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
+    alpha_values = [ 0.15, 0.2, 0.25, 0.3]  # Corruption rates
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
     epsilon = 0.1  # Convergence threshold
@@ -121,8 +121,8 @@ def run_tests_fxp_alpha(num_trials=10):
     #dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]  # for n = 10000, ||w*|| > 1
     #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]   
     #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]    
-    dp_noise_y = 86.87224608    #n=10^5, d=10
-    dp_noise_x = 274.7141631     #n=10^5, d=10
+    dp_noise_x = 86.87224608    #n=10^5, d=10
+    dp_noise_y = 274.7141631     #n=10^5, d=10
     # Corruption strat parameters
     additive = 10
     multiplicative = 10
