@@ -35,7 +35,7 @@ def run_tests_fxp_d(num_trials=10):
     #dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
     #dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]
     #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]
-    dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
+    #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
     dp_noise_y = [9689.610525]
     dp_noise_x = [968.9610525]
     sigma = 0.1  # Noise level
@@ -106,7 +106,7 @@ def run_tests_fxp_alpha(num_trials=10):
     # Define test ssize and noise parameters
     n = 10000  # Number of samples
     dimension = 10
-    alpha_values = [ 0.15, 0.2, 0.25, 0.3]  # Corruption rates
+    alpha_values = [ 0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
     epsilon = 0.1  # Convergence threshold
