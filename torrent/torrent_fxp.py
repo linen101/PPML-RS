@@ -287,12 +287,12 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
     Returns:
         _type_: model, rounds
     """
-    print(f'dp w is: {dp_w}')
+    #print(f'dp w is: {dp_w}')
     # w norm
     norm_w = np.linalg.norm((wstar))
     norm_w_inv = 1/norm_w
-    print(f'norm is: {norm_w}' )
-    print(f'inv norm is: {norm_w_inv}' )
+    #print(f'norm is: {norm_w}' )
+    #print(f'inv norm is: {norm_w_inv}' )
     # get number of parties
     m = X.shape[0]
     
@@ -322,7 +322,7 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
             error= np.linalg.norm((w - wstar))
             error_norm = error * norm_w_inv
             #print(f'fxp unormalized ols error is: {error}' )
-            print(f'fxp dp ols error is: {error_norm}' )
+            print(f'DP ols error is: {error_norm}' )
             if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
                 break         
         for i in range(m):
