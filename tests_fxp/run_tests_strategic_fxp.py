@@ -110,7 +110,7 @@ def run_tests_fxp_alpha(num_trials=10):
     # Define test ssize and noise parameters
     n = 10000  # Number of samples
     dimension = 10
-    alpha_values = [ 0.15, 0.2, 0.25, 0.3]  # Corruption rates
+    alpha_values = [ 0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
     sigma = 0.1  # Noise level
     test_perc = 0  # Test set percentage
     epsilon = 0.1  # Convergence threshold
