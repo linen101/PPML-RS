@@ -282,7 +282,7 @@ def strategic_corruption_on_X_adaptive(X, Y, w_star, w_corrupt, alpha):
 
 
 # Function to apply adversarial corruption strategy,  modifying a percentage of the dataset
-def adversarial_corruption(X, Y, alpha=0.1, beta=10):
+def adversarial_corruption(X, Y, alpha=0.1, beta=0.5):
     """
     Corrupts a fraction of the dataset to force the modeprint (i)l to predict Y = 0.
 
@@ -304,14 +304,13 @@ def adversarial_corruption(X, Y, alpha=0.1, beta=10):
     corrupted_indices = np.random.choice(n, size=num_corrupted_samples, replace=False)
 
     # Compute X_corrupted using the formula X_bad = (1 / (alpha * n_bad)) * Y^T X
-    X_corrupted = X.copy()
-    X_corrupted[:, corrupted_indices] = (1 / (beta * num_corrupted_samples)) * (X @ Y)
+    #X_corrupted = X.copy()
+    #X_corrupted[:, corrupted_indices] = (1 / (beta * num_corrupted_samples)) * (X @ Y)
 
     # Corrupt Y
     Y_corrupted = Y.copy()
-    Y_corrupted[corrupted_indices] = -beta  # Force Y to be a constant negative value
-
-    return X_corrupted, Y_corrupted, corrupted_indices
+    Y_corrupted[corrupted_indices] = beta
+    return Y_corrupted, corrupted_indices
 
 
 def main():
