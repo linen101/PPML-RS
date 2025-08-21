@@ -18,9 +18,9 @@ from plots.plots_fxp import plot_metric_vs_alpha_fxp, plot_metric_vs_d_fxp
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 
-def run_tests_fxp_d(num_trials=10):
+def run_tests_fxp_d(n, num_trials=10):
     # Define test size and noise parameters
-    n = 10000  # Number of samples
+    # Number of samples
     alpha_init= 0.2
     beta = alpha_init + 0.1  # filter size
     d_values = [10, 25, 50, 100]  # Different dimensions
@@ -185,6 +185,10 @@ def run_tests_fxp_alpha(num_trials=10):
 
 # Run the tests with averaging
 num_trials = 10
-#run_tests_fxp_d(num_trials)
-run_tests_fxp_alpha(num_trials)
+n = 10000
+run_tests_fxp_d(n,num_trials)
+n= 100000
+run_tests_fxp_d(n,num_trials)
+
+#run_tests_fxp_alpha(num_trials)
 
