@@ -11,7 +11,7 @@ if module_path not in sys.path:
     sys.path.append(module_path)
 from synthetic.strategic_corruptions import  strategic_corruption_scaled, adversarial_corruption
 from synthetic.toy_dataset import generate_synthetic_dataset
-from torrent.torrent import  torrent_admm, split_matrix, split_matrix_Y, torrent_admm_dp
+from torrent.torrent import  torrent_admm, split_matrix, split_matrix_Y, torrent_admm_dp, torrent
 from torrent.torrent_fxp import torrent_admm_fxp, torrent_admm_fxp_analyze_gauss
 from fixed_point.fixed_point_helpers import *
 from plots.plots_fxp import plot_metric_vs_alpha_fxp, plot_metric_vs_d_fxp
@@ -23,7 +23,7 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 def run_tests_fxp_real():
     # Fetch the dataset
-    test_perc = 0.2
+    test_perc = 0.4
     bike_sharing = fetch_ucirepo(id=275)  # Bike Sharing dataset
 
     # Extract features and targets
@@ -32,13 +32,22 @@ def run_tests_fxp_real():
     n ,d = X_df.shape
     # Use only 'temp' as feature
     X = X_df[['temp']].values  # shape (n_samples, 1)
-
+    #X = np.hstack([X, np.ones((X.shape[0], 1))])
     # Response: bike count, normalized to [0,1]
     if 'cnt' in y_df.columns:
         y_raw = y_df['cnt']
     else:
         y_raw = y_df.iloc[:,0]
-    y = (y_raw )
+    y = (y_raw - min(y_raw))/ (max(y_raw) - min(y_raw))
+    
+    
+    plt.figure(figsize=(8, 6))
+    plt.scatter(X, y, alpha=0.7, color='blue', marker='o', label=f'OLS ($\\beta=0$')
+    plt.xlabel("Feature")
+    plt.ylabel("Label")
+    plt.title("Relation)")
+    plt.legend()
+    plt.show()
     # Split into train/test
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_perc, random_state=42
@@ -60,7 +69,7 @@ def run_tests_fxp_real():
     print("y_test shape (1 x n):", y_test.shape)
 
     # Fit Huber Regressor using sklearn (expects n_samples x n_features)
-    huber = LinearRegression().fit(X_train, y_train)
+    huber = HuberRegressor(fit_intercept=False).fit(X_train, y_train)
     w_huber = huber.coef_
 
     # Compute predictions on test set
@@ -81,11 +90,15 @@ def run_tests_fxp_real():
     Y_cor, _ = adversarial_corruption(X_train_t, y_train_t.T, alpha=0.1, beta=100)
     X_parts = split_matrix(X_train_t, 2, train_size)
     y_parts = split_matrix_Y(Y_cor, 2, train_size)
-    w_torrent, _= torrent_admm(X_parts, y_parts, beta=0.4, epsilon=0.1, rho=1, admm_steps=5, rounds=5)
-
+   
+    #X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
+    #w_torrent, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None, dp_w=0)
+    #w_torrent, _= torrent_admm(X_parts, y_parts, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None)
+    w_torrent, _ = torrent(X_train_t, Y_cor, beta=beta, epsilon=0.1, max_iters=5)
     # Compute predictions on test set
-    Y_pred_test_torrent = X_test @ w_torrent  # shape (n_samples,)
-
+    #Y_pred_test_torrent = np.matmul(X_test_t,w_torrent)  # shape (n_samples,)
+    #print(w_torrent)
+    Y_pred_test_torrent = X_test @ w_torrent
     # Compute error metrics
     corange = y_train.max() - y_train.min() 
     mae_torrent = mean_absolute_error(y_test, Y_pred_test_torrent)
@@ -99,7 +112,7 @@ def run_tests_fxp_real():
     
       
     plt.figure(figsize=(8, 6))
-    #plt.scatter(y_test, Y_pred_test_huber, alpha=0.7, color='blue', marker='o', label=f'OLS ($\\beta=0$')
+    plt.scatter(y_test, Y_pred_test_huber, alpha=0.7, color='blue', marker='o', label=f'OLS ($\\beta=0$')
     plt.scatter(y_test, Y_pred_test_torrent, alpha=0.5, color='violet', marker='v', label=f'Torrent ($\\beta={beta}$)')
 
 

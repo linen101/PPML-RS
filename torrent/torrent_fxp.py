@@ -287,12 +287,11 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
     Returns:
         _type_: model, rounds
     """
-    #print(f'dp w is: {dp_w}')
-    # w norm
-    norm_w = np.linalg.norm((wstar))
-    norm_w_inv = 1/norm_w
-    #print(f'norm is: {norm_w}' )
-    #print(f'inv norm is: {norm_w_inv}' )
+
+    if wstar is not None:
+        norm_w = np.linalg.norm((wstar))
+        norm_w_inv = 1/norm_w
+
     # get number of parties
     m = X.shape[0]
     
@@ -316,20 +315,18 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
         S[i] = np.diagflat(np.ones(ni))
 
     for ro in range(rounds) :
-        #w = admm_fxp(X, y, S, rho, admm_steps)
-        w = admm_fxp(X, y, S, rho, admm_steps) + (dp_w*np.random.randn(d, 1))
+        w = admm_fxp(X, y, S, rho, admm_steps)
+        #w = admm_fxp(X, y, S, rho, admm_steps) + fxp(dp_w*np.random.randn(d, 1))
         if wstar is not None:
             error= np.linalg.norm((w - wstar))
             error_norm = error * norm_w_inv
-            #print(f'fxp unormalized ols error is: {error}' )
             print(f'DP ols error is: {error_norm}' )
-            #if np.linalg.norm((w - wstar)) * norm_w_inv < epsilon:  
             #    break         
         for i in range(m):
             # Compute dot product <w,x>
             dot_prod[i] = np.matmul(X[i].T,w)
             # Compute residuals r
-            r[i] = abs(dot_prod[i] - y[i])          #y - wx
+            r[i] =  abs(y[i] - dot_prod[i]) #y - wx
             #print(f'res in tor: {r[i]}')
         S = hard_thresholding_admm(r, 1-beta)  
         iteration = iteration + 1     
