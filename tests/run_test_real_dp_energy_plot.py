@@ -29,27 +29,35 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 
 # -------------------
+# Load dataset
+# -------------------
+X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
+X_train = X_train.T
+X_test = X_test.T
+Y_train = Y_train.reshape(-1, 1)
+Y_test = Y_test.reshape(-1, 1)
+X_train = normalize(X_train, axis=0)
+X_test = normalize(X_test, axis=0)
+Y_train = normalize(Y_train, norm='max', axis=0) 
+Y_test = normalize(Y_test, norm='max', axis=0)
+# -------------------
 # Run function
 # -------------------
 def run(beta):
+
+    dp_X = 7.55
+    dp_Y = 7.55
     
-    # -------------------
-    # Load dataset
-    # -------------------
-    X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
-    X_train = X_train.T
-    X_test = X_test.T
-    Y_train = Y_train.reshape(-1, 1)
-    Y_test = Y_test.reshape(-1, 1)
-    X_train = normalize(X_train, axis=0)
-    X_test = normalize(X_test, axis=0)
-    Y_train = normalize(Y_train, norm='max', axis=0) 
-    Y_test = normalize(Y_test, norm='max', axis=0)
-    dp_X = 2.17
-    dp_Y = 2.17
+    # Display results
+    print("Shapes:")
+    print("X_train:", X_train.shape)  # (features, samples)
+    print("Y_train:", Y_train.shape)  # (samples, 1)
+    print("X_test:", X_test.shape)  # (features, samples)
+    print("Y_test:", Y_test.shape)  # (samples,)
+    
 
     # Normalize rows of X
-    n, d = X_train.shape
+    d, n = X_train.shape
     
     # OLS solution
     w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
@@ -72,7 +80,7 @@ def run(beta):
         wstar=None, dp_X=dp_X, dp_y=dp_Y
     )
     
-    #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
+    w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
     # Predictions
     Y_pred_test_linear = X_test.T @ w_linear
     Y_pred_test_torrent = X_test.T @ w_torrent

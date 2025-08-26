@@ -157,7 +157,7 @@ def load_and_process_energy_data(test_percentage=0.2):
     file_path = '/home/ubuntu/PPML-RS/realdata/energydata_complete.csv'
     #file_path = '/home/linen/Desktop/PhD/project robust stats copy/robust-statistics-internal/main/realdata/energydata_complete.csv'
     input_columns = [3, 5, 7, 9, 11, 13, 15]
-    #input_columns = [11,13,15]
+    #input_columns = [15]
     target_column = 19
 
     X, Y = read_data(file_path, input_columns, target_column)

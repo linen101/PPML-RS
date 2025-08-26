@@ -20,7 +20,7 @@ from sklearn.preprocessing import normalize
 from synthetic.strategic_corruptions import   adversarial_corruption, rotate_w_arbitrary , sparse_noise_w_arbitrary , interpolate_w_arbitrary, strategic_corruption_scaled, rotate_w_partial
 from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
 from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
-from torrent.torrent import torrent
+from torrent.torrent import torrent, torrent_admm_dp
 from decimal import *
 import seaborn as sns
 from sklearn.linear_model import HuberRegressor, LinearRegression
