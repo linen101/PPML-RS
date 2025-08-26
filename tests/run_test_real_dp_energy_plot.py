@@ -68,7 +68,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     w_torrent, _ = torrent_admm_fxp_analyze_gauss(
         X_parts_fxp, y_parts_fxp, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
-        wstar=None, dp_X=dp_X, dp_y=dp_Y
+        wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y
     )
     
     #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
