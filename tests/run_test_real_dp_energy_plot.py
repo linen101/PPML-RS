@@ -118,7 +118,7 @@ def run_experiment(betas, runs=5):
 # -------------------
 # Run + Plots
 # -------------------
-betas = [0.1, 0.15, 0.2, 0.25, 0.3]
+betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
 runs = 2
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
@@ -136,6 +136,7 @@ plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
 plt.title("TORRENT Error vs. β")
 plt.legend()
 plt.grid(False)
+plt.savefig(f"error_beta_{betas}.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 # 2. Scatter plots (OLS vs TORRENT)
