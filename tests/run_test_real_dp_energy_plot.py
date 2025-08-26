@@ -31,7 +31,7 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 # -------------------
 # Run function
 # -------------------
-def run(X_train, Y_train, X_test, Y_test, beta):
+def run(beta):
     
     # -------------------
     # Load dataset
@@ -84,7 +84,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 # -------------------
 # Experiment
 # -------------------
-def run_experiment(X_train, Y_train, X_test, Y_test, betas, runs=5):
+def run_experiment(betas, runs=5):
     avg_errors, std_errors = [], []
     all_linear_preds, all_torrent_preds = {}, {}
 
@@ -92,7 +92,7 @@ def run_experiment(X_train, Y_train, X_test, Y_test, betas, runs=5):
         run_errors, linear_preds, torrent_preds = [], [], []
 
         for _ in range(runs):
-            error, Y_pred_lin, Y_pred_tor = run(X_train, Y_train, X_test, Y_test, beta)
+            error, Y_pred_lin, Y_pred_tor = run( beta)
             run_errors.append(error)
             linear_preds.append(Y_pred_lin)
             torrent_preds.append(Y_pred_tor)
@@ -113,7 +113,7 @@ def run_experiment(X_train, Y_train, X_test, Y_test, betas, runs=5):
 betas = [0.1, 0.15, 0.2, 0.25, 0.3]
 runs = 2
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
-    X_train, Y_train, X_test, Y_test, betas, runs=runs
+     betas, runs=runs
 )
 
 # 1. Error vs Beta with std shading
