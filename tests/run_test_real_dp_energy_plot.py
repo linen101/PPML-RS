@@ -27,23 +27,24 @@ from realdata.real_data import load_and_process_gas_sensor_data, load_and_proces
 getcontext().prec = 4
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
-# -------------------
-# Load dataset
-# -------------------
-X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
-X_train = X_train.T
-X_test = X_test.T
-Y_train = Y_train.reshape(-1, 1)
-Y_test = Y_test.reshape(-1, 1)
-X_train = normalize(X_train, axis=0)
-X_test = normalize(X_test, axis=0)
-Y_train = normalize(Y_train, norm='max', axis=0) 
-Y_test = normalize(Y_test, norm='max', axis=0)
 
 # -------------------
 # Run function
 # -------------------
 def run(X_train, Y_train, X_test, Y_test, beta):
+    
+    # -------------------
+    # Load dataset
+    # -------------------
+    X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
+    X_train = X_train.T
+    X_test = X_test.T
+    Y_train = Y_train.reshape(-1, 1)
+    Y_test = Y_test.reshape(-1, 1)
+    X_train = normalize(X_train, axis=0)
+    X_test = normalize(X_test, axis=0)
+    Y_train = normalize(Y_train, norm='max', axis=0) 
+    Y_test = normalize(Y_test, norm='max', axis=0)
     dp_X = 2.17
     dp_Y = 2.17
 
