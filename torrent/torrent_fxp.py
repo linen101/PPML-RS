@@ -347,8 +347,8 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
     Returns:
         _type_: model, rounds
     """
-    norm_w = np.linalg.norm((wstar))
-    norm_w_inv = 1 / norm_w
+    #norm_w = np.linalg.norm((wstar))
+    #norm_w_inv = 1 / norm_w
     #print(f'dp noise is: {dp_noise}')
     # get number of parties
     m = X.shape[0]

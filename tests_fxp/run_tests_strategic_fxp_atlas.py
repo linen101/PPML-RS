@@ -22,16 +22,10 @@ def read_from_file(csv_name, feat, lab, test_perc, intercept=0):
     y = df[[lab]].values
     if intercept:
         X = np.hstack([X, np.ones((X.shape[0], 1))])  # shape (n, 2)
-    # Split into train/test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_perc, random_state=42
-    )
-    # Transpose X to match d × n convention
-    X_train = X_train.T  # shape (d, n_train)
-    X_test  = X_test.T   # shape (d, n_test)
-    y_train = y_train.reshape(-1, 1)  # shape (1, n_train)
-    y_test = y_test.reshape(-1, 1)  # shape (1, n_train)
-    return X_train, X_test, y_train, y_test
+    n , d = X.shape
+    for i in range(n):
+        X[i] = X[i]
+    return X, y
 
 def read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc, intercept=0):
     
@@ -51,113 +45,182 @@ def read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc, intercep
     # Feature matrix (X)
     X = merged_df[feat].values  # shape (n, 1)
     for i, name in enumerate(feat):
-        X[:, i] = X[:, i] / 10
+        X[:, i] = X[:, i]
+        #X.T[i] = X.T[i]/np.linalg.norm(X.T[i])
     if intercept:
         X = np.hstack([X, np.ones((X.shape[0], 1))])  # shape (n, 2)
-
+    n , d = X.shape
+    for i in range(n):
+        X[i] = X[i]/np.linalg.norm(X[i])
+          
     # Response variable (y)
     y = merged_df[lab].values # shape (n,)
     y = y/10000
-    # Split into train/test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_perc, random_state=42
-    )
-    # Transpose X to match d × n convention
-    X_train = X_train.T  # shape (d, n_train)
-    X_test  = X_test.T   # shape (d, n_test)
-    y_train = y_train.reshape(-1, 1)  # shape (1, n_train)
-    y_test = y_test.reshape(-1, 1)  # shape (1, n_train)
+    
 
-    return X_train, X_test, y_train, y_test
+    return X,y
 
 
-def run_tests_opportunity_atlas(X_train, X_test, y_train, y_test):
-    num_runs = 5   # how many independent runs
-    beta = 0.2
-    dp_w = 0
-
-    # store errors & coefficients for plotting
+def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
+    dp_w = 0.1641895591
+    dp_X = 7.55
+    dp_Y = 7.55
+    all_errors = []
     all_linear_preds = []
     all_torrent_preds = []
-    all_errors = []
-
-    d, n = X_train.shape
 
     for run in range(num_runs):
-        print(f"\n=== Run {run+1}/{num_runs} ===")
+        # Split into train/test
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_perc, random_state=42
+        )
+        X_train, X_test = X_train.T, X_test.T
+        y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
+        d, n = X_train.shape
 
-        # Fit Linear Model (OLS in fixed point)
-        w_linear = fxp(np.empty((d,1)))
-        w_linear = np.matmul(np.linalg.inv(np.matmul(fxp(X_train),fxp(X_train.T))), np.matmul(fxp(X_train),fxp(y_train))) 
-        w_linear_dp = w_linear + dp_w*np.random.randn(d,1)
-
+        # Linear regression baseline
+        w_linear = np.linalg.inv(X_train @ X_train.T)@(X_train @ y_train)
+        #w_linear = LinearRegression(fit_intercept=False).fit(X_train.T, y_train).coef_
+        #w_linear = w_linear.T
         norm_w = np.linalg.norm(w_linear)
         norm_w_inv = 1 / norm_w
-
-        # Predictions on test set
-        Y_pred_test_linear = np.matmul(X_test.T,w_linear)  # shape (n_samples,)
 
         # Apply adversarial corruption
         Y_cor, _ = adversarial_corruption(X_train, y_train, alpha=beta, beta=10)
 
-        # Split into parties
+        # Split into parties + convert to fxp
         X_parts = split_matrix(X_train, 2, n)
         y_parts = split_matrix_Y(Y_cor, 2, n)
         X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
+        
 
-        # Run Torrent
-        w_torrent, _ = torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None, dp_w=0)
-        # Compute predictions on test set
-        Y_pred_test_torrent = np.matmul(X_test.T, w_torrent)  # shape (n_samples,)
-        # Log
-        print("Linear coefficients:", w_linear.T)
-        print("Torrent coefficients:", w_torrent.T)
-        error = np.linalg.norm(w_torrent - w_linear)
-        print("Error:", error)
+        # Torrent ADMM (fxp)
+        w_torrent, _ = torrent_admm_fxp_analyze_gauss(
+            X_parts_fxp, y_parts_fxp, beta=beta,
+            epsilon=0.1, rho=1, admm_steps=5, rounds=5,
+            wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y
+        )
+        '''
 
-        # save results
+        w_torrent, _ = torrent_admm_dp(
+            X_parts, y_parts, beta=beta,
+            epsilon=0.1, rho=1, admm_steps=5, rounds=5,
+            wstar=None, dp_X=dp_X, dp_y=dp_Y
+        )
+        '''
+
+        # Predictions
+        Y_pred_test_linear = np.matmul(X_test.T, w_linear)
+        X_test_fxp = fxp(X_test)
+        Y_pred_test_torrent = np.matmul(X_test_fxp.T, w_torrent)
+
+        # Error
+        
+        error = np.linalg.norm(w_torrent - w_linear.T) 
+        all_errors.append(error)
+        print("OLS is:", w_linear)
+        print("Torrent is:", w_torrent)
+        print("Error is:", error)
+        
         all_linear_preds.append(Y_pred_test_linear)
         all_torrent_preds.append(Y_pred_test_torrent)
-        all_errors.append(error)
 
+    # === Scatter plot (averaged) ===
+    sum_linear = np.zeros_like(all_linear_preds[0])
+    sum_torrent = np.zeros_like(all_torrent_preds[0])
+    for run in range(num_runs):
+        sum_linear += all_linear_preds[run]
+        sum_torrent += all_torrent_preds[run]
 
-    # === Plotting after all runs ===
+    avg_linear_preds = sum_linear / num_runs
+    avg_torrent_preds = sum_torrent / num_runs
     plt.figure(figsize=(8, 6))
-
-    # Plot OLS
-    for run in range(num_runs):
-        plt.scatter(y_test, all_linear_preds[run],
-                    alpha=0.3, color='blue', marker='o',
-                    label='OLS ($\\beta=0$)' if run == 0 else "")
-
-    # Plot Torrent
-    for run in range(num_runs):
-        plt.scatter(y_test, all_torrent_preds[run],
-                    alpha=0.3, color='violet', marker='v',
-                    label=f'Torrent ($\\beta={beta}$)' if run == 0 else "")
-
+    #plt.ylim(0, 1)
+    #plt.xscale("log")
+    #plt.yscale("log")
+    plt.scatter(y_test, avg_linear_preds, alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
+    plt.scatter(y_test, avg_torrent_preds, alpha=0.9, color='violet', marker='v', label=f'Torrent ($\\beta={beta}$)')
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
-    plt.title(f"Actual vs. Predicted (Over {num_runs} Runs, Corrupted vs. Clean Dataset)")
+    plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
     plt.legend()
+    plt.grid(True)
     plt.show()
 
-    # Error summary
-    print("\nAverage error over runs:", np.mean(all_errors))
-    print("Std of error:", np.std(all_errors))
-   
+    return np.mean(all_errors), np.std(all_errors)
 
-# Example usage
-test_perc = 0.4
-script_dir = os.path.dirname(os.path.abspath(__file__))  # directory of your script
 
-#X_train, X_test, y_train, y_test = read_from_file("cz_outcomes.csv",['par_rank_pooled_pooled_mean', 'frac_below_median_pooled_pooled'], 'working_pooled_pooled_p50', test_perc)
-#run_tests_opportunity_atlas(X_train, X_test, y_train, y_test)
+def plot_errors_vs_beta(X, y, betas, num_runs=2):
+    avg_errors = []
+    std_errors = []
 
-csv_names = ["shown_cz_d_frac_college_graduates.csv", "shown_cz_d_med_hh_inc.csv", "shown_cz_d_poverty_rate.csv", "shown_cz_d_share_non_white.csv"]
-suffixes = ["_college",  "_hh", "_poverty", "_population"]
-feat = ['Change_in_Fraction_of_College_Graduates', 'Change_in_Median_Household_Income', 'Change_in_Poverty_Rate']
-lab = 'Change_in_Fraction_of_Non-White_Population'
-X_train, X_test, y_train, y_test = read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc=0.2, intercept=0)
-run_tests_opportunity_atlas(X_train, X_test, y_train, y_test)
+    for beta in betas:
+        avg_err, std_err = run_tests_opportunity_atlas(X, y, beta, num_runs=num_runs)
+        avg_errors.append(avg_err)
+        std_errors.append(std_err)
 
+    # Line plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
+    plt.fill_between(betas,
+                     np.array(avg_errors) - np.array(std_errors),
+                     np.array(avg_errors) + np.array(std_errors),
+                     alpha=0.2, color='purple')
+    
+    
+    #plt.xscale("log")
+    #plt.yscale("log")
+    plt.xlabel(r"$\beta$")
+    plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
+    plt.title("TRIP Error vs. β")
+    plt.legend()
+    plt.grid(False)
+    plt.show()
+    return avg_errors
+
+
+# === Example usage ===
+test_perc = 0.2
+script_dir = os.path.dirname(os.path.abspath(__file__))
+'''
+csv_names = [
+    "shown_cz_d_med_hh_inc.csv",
+    "shown_cz_d_frac_college_graduates.csv",
+    "shown_cz_d_poverty_rate.csv",
+    "shown_cz_d_share_non_white.csv"
+]
+suffixes = ["_hh", "_college", "_poverty", "_population"]
+feat = [
+    'Change_in_Fraction_of_Non-White_Population',
+    'Change_in_Fraction_of_College_Graduates',
+    'Change_in_Poverty_Rate'
+]
+lab = 'Change_in_Median_Household_Income'
+'''
+
+csv_names = [
+    "shown_cz_kfr_rP_gP_pall.csv",
+    "shown_cz_hours_yr_rP_gP_pall.csv",
+    "shown_cz_wageflex_rank_rP_gP_pall.csv",
+]
+suffixes = ["_Week", "_Wage", "_poverty", "_population"]
+feat = [
+    'Hours_Worked_Per_Week_at_Age_35_rP_gP_pall',
+    'Hourly_Wage_$/hour_at_Age_35_rP_gP_pall',
+]
+lab = 'Household_Income_at_Age_35_rP_gP_pall'
+X, y = read_from_file("cz_outcomes.csv"
+                      ,[
+                        #'par_rank_pooled_pooled_mean',
+                         #'hours_wk_pooled_pooled_mean',
+                         'work_26_pooled_pooled_mean'
+                         ],
+                         'working_pooled_pooled_mean', test_perc, intercept=0)
+#X, y = read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc=test_perc, intercept=0)
+
+#betas = [0.1, 0.15, 0.2, 0.25]
+betas = [0.1, 0.15, 0.2, 0.25, 0.3]
+avg_errors = plot_errors_vs_beta(X, y, betas, num_runs=2)
+
+print("Betas:", betas)
+print("Average Errors:", avg_errors)

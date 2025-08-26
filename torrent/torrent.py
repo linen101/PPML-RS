@@ -602,7 +602,7 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     w = w - dp_noise
     return w, iteration
 
-def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps, rounds = 10, wstar= None):
+def torrent_admm_dp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_X=0, dp_y=0):
     """_summary_
 
     Args:
@@ -636,22 +636,15 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     w = np.zeros(d)
     w = w.reshape(-1,1)
     
-    sigma = dp_epsilon
     for i in range(m):
         _,ni = X[i].shape
         S[i] = np.diagflat(np.ones(ni))
     iteration=0
     
-    while np.linalg.norm(abs(w - wstar)) > 0.2:
-        #if iteration > rounds:
-            #w = admm(X, y, S, rho, admm_steps) 
-            #print(np.linalg.norm(abs(w - wstar)) )
-        #    break
-        #else:
-    #for iteration in range(rounds): 
-            #w = admm_analyze_gauss(X, y, S, rho, admm_steps, sigma) 
-            w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
-            print(f'float error is: {np.linalg.norm(abs(w - wstar))}' )
+  
+    for iteration in range(rounds): 
+            w = admm_analyze_gauss(X, y, S, rho, admm_steps, dp_X, dp_y) 
+            #w = admm(X, y, S, rho, admm_steps) + sigma*np.random.randn(d, 1)
             for i in range(m):
                 # Compute dot product <w,x>
                 dot_prod[i] = np.matmul(X[i].T,w)
@@ -663,7 +656,7 @@ def torrent_admm_dp(X, y,  beta, epsilon, rho, dp_epsilon, dp_delta, admm_steps,
     #print(np.linalg.norm(abs(w - wstar)) )
     return w,iteration
 
-def admm_analyze_gauss(X, y, S, rho, k, sigma):
+def admm_analyze_gauss(X, y, S, rho, k, dp_X, dp_y):
     """_ consensus admm 
    with analyze gauss from Dwork14
     _   
@@ -680,9 +673,9 @@ def admm_analyze_gauss(X, y, S, rho, k, sigma):
     A = np.empty(parties, dtype=object)
     b = np.empty(parties, dtype=object)
     
-    dp_noisex =  sigma*np.random.randn(d**2, 1)
+    dp_noisex =  dp_X*np.random.randn(d**2, 1)
     dp_noisex = dp_noisex.flatten().reshape(d,d)
-    dp_noisey =  sigma*np.random.randn(d, 1)
+    dp_noisey =  dp_y*np.random.randn(d, 1)
     for i in range(k):
         znew = np.zeros((d,1))
         #znew = znew.reshape(-1,1)

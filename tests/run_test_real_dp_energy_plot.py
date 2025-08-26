@@ -1,0 +1,146 @@
+
+from sklearn.preprocessing import normalize
+from sklearn.datasets import load_breast_cancer, load_diabetes, fetch_california_housing,fetch_species_distributions, fetch_covtype
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+import sys
+import os
+import pandas as pd
+
+module_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+if module_path not in sys.path:
+    sys.path.append(module_path)
+ 
+from synthetic.strategic_corruptions import  adversarial_corruption
+from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
+from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
+from torrent.torrent import torrent, torrent_admm_dp, split_matrix, split_matrix_Y
+from torrent.torrent_fxp import split_matrix_fxp
+from decimal import *
+import seaborn as sns
+from sklearn.linear_model import HuberRegressor, LinearRegression
+from realdata.real_data import load_and_process_gas_sensor_data, load_and_process_energy_data
+getcontext().prec = 4
+markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
+
+# -------------------
+# Load dataset
+# -------------------
+X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
+X_train = X_train.T
+X_test = X_test.T
+Y_train = Y_train.reshape(-1, 1)
+Y_test = Y_test.reshape(-1, 1)
+X_train = normalize(X_train, axis=0)
+X_test = normalize(X_test, axis=0)
+Y_train = normalize(Y_train, norm='max', axis=0) 
+Y_test = normalize(Y_test, norm='max', axis=0)
+
+# -------------------
+# Run function
+# -------------------
+def run(X_train, Y_train, X_test, Y_test, beta):
+    dp_X = 3.77
+    dp_Y = 3.77
+
+    # Normalize rows of X
+    n, d = X_train.shape
+    
+    # OLS solution
+    w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
+    norm_w = np.linalg.norm(w_linear)
+    norm_w_inv = 1 / norm_w
+
+    # Apply adversarial corruption
+    Y_cor, _ = adversarial_corruption(X_train, Y_train, alpha=beta, beta=10)
+
+    # Split into parties
+    X_parts = split_matrix(X_train, 2, n)
+    y_parts = split_matrix_Y(Y_cor, 2, n)
+    X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
+
+    # TORRENT regression
+    
+    w_torrent, _ = torrent_admm_dp(
+        X_parts, y_parts, beta=beta,
+        epsilon=0.1, rho=1, admm_steps=5, rounds=5,
+        wstar=None, dp_X=dp_X, dp_y=dp_Y
+    )
+    
+    #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
+    # Predictions
+    Y_pred_test_linear = X_test.T @ w_linear
+    Y_pred_test_torrent = X_test.T @ w_torrent
+
+    # Error
+    error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv
+    return error, Y_pred_test_linear, Y_pred_test_torrent
+
+# -------------------
+# Experiment
+# -------------------
+def run_experiment(X_train, Y_train, X_test, Y_test, betas, runs=5):
+    avg_errors, std_errors = [], []
+    all_linear_preds, all_torrent_preds = {}, {}
+
+    for beta in betas:
+        run_errors, linear_preds, torrent_preds = [], [], []
+
+        for _ in range(runs):
+            error, Y_pred_lin, Y_pred_tor = run(X_train, Y_train, X_test, Y_test, beta)
+            run_errors.append(error)
+            linear_preds.append(Y_pred_lin)
+            torrent_preds.append(Y_pred_tor)
+
+        avg_errors.append(np.mean(run_errors))
+        print("Average Errors:", avg_errors)
+        std_errors.append(np.std(run_errors))
+
+        # Average predictions
+        all_linear_preds[beta] = np.mean(linear_preds, axis=0)
+        all_torrent_preds[beta] = np.mean(torrent_preds, axis=0)
+
+    return avg_errors, std_errors, all_linear_preds, all_torrent_preds
+
+# -------------------
+# Run + Plots
+# -------------------
+betas = [0.1, 0.15, 0.2, 0.25, 0.3]
+runs = 2
+avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
+    X_train, Y_train, X_test, Y_test, betas, runs=runs
+)
+
+# 1. Error vs Beta with std shading
+plt.figure(figsize=(8, 6))
+plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
+plt.fill_between(betas,
+                 np.array(avg_errors) - np.array(std_errors),
+                 np.array(avg_errors) + np.array(std_errors),
+                 alpha=0.2, color='purple')
+plt.xlabel(r"$\beta$")
+plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
+plt.title("TORRENT Error vs. β")
+plt.legend()
+plt.grid(False)
+plt.show()
+
+# 2. Scatter plots (OLS vs TORRENT)
+for beta in betas:
+    plt.figure(figsize=(8, 6))
+    plt.scatter(Y_test, avg_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
+    plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
+    plt.xlabel("Actual")
+    plt.ylabel("Predicted")
+    plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
+    plt.legend()
+    plt.grid(True)
+    # Save figure (PNG, high resolution)
+    plt.savefig(f"scatter_beta_{beta}.png", dpi=300, bbox_inches="tight")
+    plt.show()
+
+print("Averaged Errors:", avg_errors)
