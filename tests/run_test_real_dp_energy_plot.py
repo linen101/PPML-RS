@@ -19,7 +19,7 @@ from synthetic.strategic_corruptions import  adversarial_corruption
 from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
 from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
 from torrent.torrent import torrent, torrent_admm_dp, split_matrix, split_matrix_Y
-from torrent.torrent_fxp import split_matrix_fxp
+from torrent.torrent_fxp import split_matrix_fxp, torrent_admm_fxp_analyze_gauss
 from decimal import *
 import seaborn as sns
 from sklearn.linear_model import HuberRegressor, LinearRegression
@@ -65,8 +65,8 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # TORRENT regression
     
-    w_torrent, _ = torrent_admm_dp(
-        X_parts, y_parts, beta=beta,
+    w_torrent, _ = torrent_admm_fxp_analyze_gauss(
+        X_parts_fxp, y_parts_fxp, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_X=dp_X, dp_y=dp_Y
     )
