@@ -162,7 +162,7 @@ def load_and_process_energy_data(test_percentage=0.2, i=0):
 
     X, Y = read_data(file_path, input_columns, target_column)
     
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_percentage, random_state=42+i)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_percentage, random_state=42+i+1)
     
     return X_train, X_test, Y_train, Y_test 
     

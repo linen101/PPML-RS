@@ -57,14 +57,16 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # TORRENT regression
     
-    #w_torrent, _ = torrent_admm_fxp_analyze_gauss
-    #( X_parts_fxp, y_parts_fxp, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y)
+    w_torrent, _ = torrent_admm_fxp_analyze_gauss(
+        X_parts_fxp, y_parts_fxp, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y)
     
+    '''
     w_torrent, _ = torrent_admm_ag(
         X_parts, y_parts, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_X=dp_X, dp_y=dp_Y
     )
+    '''
     
     #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
     # Predictions
@@ -130,7 +132,7 @@ def run_experiment(betas, runs=1):
         plt.ylabel("Predicted")
         plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
         plt.legend()
-        plt.grid(True)
+        plt.grid(False)
         # Save figure (PNG, high resolution)
         plt.savefig(f"scatter_beta_{beta}_energy.png", dpi=300, bbox_inches="tight")
         plt.show()
@@ -140,7 +142,7 @@ def run_experiment(betas, runs=1):
 # Run + Plots
 # -------------------
 betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-runs = 1
+runs = 5
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
