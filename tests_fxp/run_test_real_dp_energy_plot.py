@@ -71,7 +71,9 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # Error
     fxp(w_linear)
-    error = fxp(np.linalg.norm(w_torrent - w_linear)) * norm_w_inv       #cast to fxo through norm
+    error = fxp(np.linalg.norm(w_torrent - w_linear))        #cast to fxo through norm
+    print("OLS is:", w_linear)
+    print("Torrent is:", w_torrent)
     print("Error is:", error.info())
     return error, Y_pred_test_linear, Y_pred_test_torrent
 
