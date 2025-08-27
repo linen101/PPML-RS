@@ -5,3 +5,5 @@
 realdata/
 Figures/
 *.csv
+trash/
+trash/*
