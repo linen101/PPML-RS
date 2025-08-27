@@ -43,7 +43,7 @@ def run_tests_fxp_d(n, num_trials=10):
     #dp_noise_x = [86.87224608]    #n=10^5, d=10
     #dp_noise_y = [274.7141631]     #n=10^5, d=10
     sigma = 0.1  # Noise level
-    test_perc = 0  # Test set percentage
+    test_perc = 0.01  # Test set percentage
     epsilon = 0.1  # Convergence thresholdc
     
     # Coruption strategies parameters
