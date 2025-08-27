@@ -51,6 +51,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
     norm_w = np.linalg.norm(w_linear)
     norm_w_inv = 1 / norm_w
+    norm_w_inv = fxp(norm_w_inv)
 
     # Apply adversarial corruption
     Y_cor, _ = adversarial_corruption(X_train, Y_train, alpha=beta, beta=10)
@@ -62,7 +63,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # TORRENT regression
     
-    w_torrent, _ = torrent_admm_ag(
+    w_torrent, _ = torrent_admm_fxp_analyze_gauss(
         X_parts, y_parts, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_X=dp_X, dp_y=dp_Y
@@ -71,10 +72,11 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
     # Predictions
     Y_pred_test_linear = X_test.T @ w_linear
+    X_test = fxp(X_test)
     Y_pred_test_torrent = X_test.T @ w_torrent
 
     # Error
-    error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv
+    error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv       #cast to fxo through norm
     return error, Y_pred_test_linear, Y_pred_test_torrent
 
 # -------------------
