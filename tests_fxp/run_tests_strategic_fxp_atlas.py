@@ -135,7 +135,7 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
 
     avg_linear_preds = sum_linear / num_runs
     avg_torrent_preds = sum_torrent / num_runs
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(14, 8))
     #plt.ylim(0, 1)
     #plt.xscale("log")
     #plt.yscale("log")
@@ -198,7 +198,7 @@ X, y = read_from_file("cz_outcomes.csv"
 
 #betas = [0.1, 0.15, 0.2, 0.25]
 betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-avg_errors, std_errors = plot_errors_vs_beta(X, y, betas, num_runs=10)
+avg_errors, std_errors = plot_errors_vs_beta(X, y, betas, num_runs=5)
 
 print("Betas:", betas)
 print("Average Errors:", avg_errors)
