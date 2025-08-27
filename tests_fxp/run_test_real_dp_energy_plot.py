@@ -141,8 +141,8 @@ def run_experiment(betas, runs=1):
 # -------------------
 # Run + Plots
 # -------------------
-betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-runs = 5
+betas = [0.1,  0.2, 0.3,  0.4]
+runs = 2
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
@@ -150,10 +150,10 @@ avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
 # 1. Error vs Beta with std shading
 plt.figure(figsize=(14, 8))
 plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
-plt.xlabel(r"$\beta$")
-plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
-plt.title("TORRENT Error vs. β")
-plt.legend()
+plt.xlabel(r"$\beta$", fontsize=25)
+plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$', fontsize=25)
+plt.title("TORRENT Error vs. β", fontsize=25)
+plt.legend(fontsize=25)
 plt.grid(False)
 plt.savefig(f"error_beta_energy.png", dpi=300, bbox_inches="tight")
 plt.show()

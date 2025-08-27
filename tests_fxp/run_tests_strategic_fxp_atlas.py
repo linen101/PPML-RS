@@ -197,7 +197,7 @@ X, y = read_from_file("cz_outcomes.csv"
                          'working_pooled_pooled_mean', test_perc, intercept=0)
 
 #betas = [0.1, 0.15, 0.2, 0.25]
-betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
+betas = [0.1,  0.2, 0.3, 0.4]
 avg_errors, std_errors = plot_errors_vs_beta(X, y, betas, num_runs=5)
 
 print("Betas:", betas)
