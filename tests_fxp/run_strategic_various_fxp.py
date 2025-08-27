@@ -41,7 +41,7 @@ def run_experiment(
     results = []
 
     if mode == "dimension":
-        # Zip dimension and dp values
+            # Zip dimension and dp values
         x_dp_pairs = list(zip(d_values, dp_values))
     else:
         x_dp_pairs = [(alpha_values[i], dp_values[0]) for i in range(len(alpha_values))]  # dp fixed
@@ -51,7 +51,7 @@ def run_experiment(
         for trial in range(num_trials):
             d = x if mode == "dimension" else d_values[0]   # fix d in alpha experiments
             alpha = x if mode == "alpha" else 0.3           # fix corruption rate in dimension experiments
-            dp_w = x if mode == "dimension" else dp_values[0]
+
             # Generate data
             X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
 
@@ -61,25 +61,28 @@ def run_experiment(
             # Apply corruption
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
 
-            # Run Torrent
+            # Run Torrent (fixed-point)
             m = 2
             X_parts = split_matrix(X_train, m, int(n*(1-test_perc)))
             y_parts = split_matrix_Y(Y_cor, m, int(n*(1-test_perc)))
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             beta = alpha + 0.1
-            #w_torrent, _ = torrent_admm(X_parts, y_parts, beta, epsilon, rho=1, admm_steps=5, rounds=5, wstar=None)
-            w_torrent, _ = torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho=1, admm_steps=5, rounds=5, wstar=None, dp_w=dp_w)
-            w_norm = 1/ np.linalg.norm(w_star)
-            error = np.linalg.norm(w_torrent - w_star)*w_norm
-            print(f"[{mode}] {x=} trial {trial+1}: error={error}")
+            w_torrent, _ = torrent_admm_fxp(
+                X_parts_fxp, y_parts_fxp, beta, epsilon, rho=1,
+                admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
+            )
+
+            # Normalized error
+            w_norm = 1 / np.linalg.norm(w_star)
+            error = np.linalg.norm(w_torrent - w_star) * w_norm
+            print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
             error_accum += error
 
         avg_error = error_accum / num_trials
-        print(f"[{mode}] {x=} averaged error={avg_error}\n")
+        print(f"[{mode}] {x=} dp_w={dp_w} averaged error={avg_error}\n")
         results.append(avg_error)
 
     return [x for x, _ in x_dp_pairs], results
-
 
 # ========== Define corruption strategies ========== #
 def corruption_additive(w_star, d):
