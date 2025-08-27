@@ -45,7 +45,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
     norm_w = np.linalg.norm(w_linear)
     norm_w_inv = 1 / norm_w
-    norm_w_inv = fxp(norm_w_inv)
+    #norm_w_inv = fxp(norm_w_inv)
 
     # Apply adversarial corruption
     Y_cor, _ = adversarial_corruption(X_train, Y_train, alpha=beta, beta=10)
@@ -71,7 +71,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # Error
     fxp(w_linear)
-    error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv       #cast to fxo through norm
+    error = fxp(np.linalg.norm(w_torrent - w_linear)) * norm_w_inv       #cast to fxo through norm
     print("Error is:", error.info())
     return error, Y_pred_test_linear, Y_pred_test_torrent
 
