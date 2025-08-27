@@ -50,7 +50,7 @@ def run_experiment(
     for x, dp_w in x_dp_pairs:
         #error_accum=fxp(0)
         #avg_error=fxp(0)
-        error = 0.0
+        error_accum = 0.0
         avg_error = 0.0
         for trial in range(num_trials):
             d = x if mode == "dimension" else d_values[0]   # fix d in alpha experiments
