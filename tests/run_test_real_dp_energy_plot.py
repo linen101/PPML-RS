@@ -78,6 +78,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # Error
     error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv       #cast to fxo through norm
+    print("Error is:", error)
     return error, Y_pred_test_linear, Y_pred_test_torrent
 
 # -------------------
