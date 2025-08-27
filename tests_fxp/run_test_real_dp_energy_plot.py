@@ -48,7 +48,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     #norm_w_inv = fxp(norm_w_inv)
 
     # Apply adversarial corruption
-    Y_cor, _ = adversarial_corruption(X_train, Y_train, alpha=beta, beta=10)
+    Y_cor, _ = adversarial_corruption(X_train, Y_train, alpha=beta, beta=1)
 
     # Split into parties
     X_parts = split_matrix(X_train, 2, n)
@@ -124,8 +124,8 @@ def run_experiment(betas, runs=1):
     # 2. Scatter plots (OLS vs TORRENT)
     for beta in betas:
         plt.figure(figsize=(14, 8))
-        plt.scatter(Y_test, avg_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
-        plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
+        plt.scatter(Y_test, all_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
+        plt.scatter(Y_test, all_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
         plt.xlabel("Actual")
         plt.ylabel("Predicted")
         plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
@@ -140,7 +140,7 @@ def run_experiment(betas, runs=1):
 # Run + Plots
 # -------------------
 betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-runs = 2
+runs = 1
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
