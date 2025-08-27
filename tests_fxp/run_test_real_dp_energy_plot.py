@@ -70,6 +70,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     Y_pred_test_torrent = np.matmul(X_test.T,w_torrent)
 
     # Error
+    fxp(w_linear)
     error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv       #cast to fxo through norm
     print("Error is:", error.info())
     return error, Y_pred_test_linear, Y_pred_test_torrent
