@@ -52,7 +52,7 @@ def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2,i=0):
     n_test = int(n * test_percentage)
     n_train = n - n_test
 
-    X_train, X_test, y_train, y_test = train_test_split(X.T, Y.ravel(), test_percentage, random_state=i)
+    X_train, X_test, y_train, y_test = train_test_split(X.T, Y.ravel(), test_size=test_percentage, random_state=i)
 
     return X_train.T, y_train.reshape(-1,1), X_test.T, y_test.reshape(-1,1), w_star
 
