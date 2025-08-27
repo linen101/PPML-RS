@@ -26,7 +26,7 @@ from fixed_point.fixed_point_helpers import *
 def run_experiment(
     mode="dimension",
     corruption_fn=None,
-    num_trials=10,
+    num_trials=1,
     n=2000,
     d_values=[10, 25, 50, 100],
     alpha_values=[0.1, 0.2, 0.3, 0.4],
@@ -82,7 +82,7 @@ def run_experiment(
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
             )
             
-            #error = fxp(0)
+            error = fxp(0)
            
             # Normalized error
             norm_w = np.linalg.norm((w_star))
