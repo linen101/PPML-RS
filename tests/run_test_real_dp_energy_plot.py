@@ -117,6 +117,20 @@ def run_experiment(betas, runs=5):
         all_linear_preds[beta] = np.mean(linear_preds, axis=0)
         all_torrent_preds[beta] = np.mean(torrent_preds, axis=0)
 
+        
+    # 2. Scatter plots (OLS vs TORRENT)
+    for beta in betas:
+        plt.figure(figsize=(14, 8))
+        plt.scatter(Y_test, avg_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
+        plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
+        plt.xlabel("Actual")
+        plt.ylabel("Predicted")
+        plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
+        plt.legend()
+        plt.grid(True)
+        # Save figure (PNG, high resolution)
+        plt.savefig(f"scatter_beta_{beta}_energy.png", dpi=300, bbox_inches="tight")
+        plt.show()
     return avg_errors, std_errors, all_linear_preds, all_torrent_preds
 
 # -------------------
@@ -143,18 +157,5 @@ plt.grid(False)
 plt.savefig(f"error_beta_energy.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-# 2. Scatter plots (OLS vs TORRENT)
-for beta in betas:
-    plt.figure(figsize=(14, 8))
-    plt.scatter(Y_test, avg_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
-    plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
-    plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
-    plt.legend()
-    plt.grid(True)
-    # Save figure (PNG, high resolution)
-    plt.savefig(f"scatter_beta_{beta}_energy.png", dpi=300, bbox_inches="tight")
-    plt.show()
 
 print("Averaged Errors:", avg_errors)

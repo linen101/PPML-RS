@@ -139,7 +139,7 @@ def select_range(w_alpham, w_mbeta, alpha, beta, m, step):
         #print(f'choose lower')
         return (alpha, m-step)
           
-def dp_fxp_dist_quantile(r, q, dp_e=1):
+def dp_fxp_dist_quantile(r, q, dp_e=0.1):
     n = sum(ri.size for ri in r)    
     parties = len(r)    
     quantile = int(np.ceil(q * (n)))

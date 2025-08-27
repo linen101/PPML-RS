@@ -48,10 +48,10 @@ def run_experiment(
         x_dp_pairs = [(alpha_values[i], dp_values[0]) for i in range(len(alpha_values))]  # dp fixed
 
     for x, dp_w in x_dp_pairs:
-        #error_accum=fxp(0)
-        #avg_error=fxp(0)
-        error_accum = 0.0
-        avg_error = 0.0
+        error_accum=fxp(0)
+        avg_error=fxp(0)
+        #error_accum = 0.0
+        #avg_error = 0.0
         for trial in range(num_trials):
             d = x if mode == "dimension" else d_values[0]   # fix d in alpha experiments
             alpha = x if mode == "alpha" else 0.3           # fix corruption rate in dimension experiments
@@ -71,6 +71,7 @@ def run_experiment(
             y_parts = split_matrix_Y(Y_cor, m, int(n*(1-test_perc)))
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             beta = alpha + 0.1
+            '''
             w_torrent, _ = torrent_admm_dp(
                 X_parts, y_parts, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
@@ -80,7 +81,7 @@ def run_experiment(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
             )
-            '''
+            
             #error = fxp(0)
            
             # Normalized error
