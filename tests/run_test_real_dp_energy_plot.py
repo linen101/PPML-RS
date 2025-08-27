@@ -20,6 +20,7 @@ from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
 from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
 from torrent.torrent import torrent, torrent_admm_dp, split_matrix, split_matrix_Y, torrent_admm_ag
 from torrent.torrent_fxp import split_matrix_fxp, torrent_admm_fxp_analyze_gauss
+from fixed_point.fixed_point_helpers import *
 from decimal import *
 import seaborn as sns
 from sklearn.linear_model import HuberRegressor, LinearRegression
