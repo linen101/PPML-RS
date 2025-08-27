@@ -25,11 +25,11 @@ from fixed_point.fixed_point_helpers import *
 def run_experiment(
     mode="dimension",
     corruption_fn=None,
-    num_trials=5,
+    num_trials=2,
     n=2000,
     d_values=[10, 25, 50, 100],
     alpha_values=[0.1, 0.2, 0.3, 0.4],
-    dp_values=[0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464],
+    dp_values=[0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554],
     sigma=0.1,
     test_perc=0.2,
     epsilon=0.1,
@@ -119,7 +119,7 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
 
     plt.xlabel("Dimension (d)", fontsize=25)
     plt.ylabel(r"$\| w - w^* \|_2/\|w^*\|_2$", fontsize=25)
-    plt.title(f"Torrent Error vs Dimension\n( β={fixed_beta})", fontsize=25)
+    plt.title(f"Trip* Error vs Dimension\n( β={fixed_beta})", fontsize=25)
     plt.xticks(fontsize=25)
     plt.yticks(fontsize=25)
     plt.legend(fontsize=20)
@@ -135,7 +135,7 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
 
     plt.xlabel("Corruption Rate (β)", fontsize=25)
     plt.ylabel(r"$\| w - w^* \|_2/\|w^*\|_2$", fontsize=25)
-    plt.title(f"Torrent Error vs Corruption Rate\n( d={fixed_d})", fontsize=25)
+    plt.title(f"Trip* Error vs Corruption Rate\n( d={fixed_d})", fontsize=25)
     plt.xticks(fontsize=25)
     plt.yticks(fontsize=25)
     plt.legend(fontsize=20)
