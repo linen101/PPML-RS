@@ -77,12 +77,7 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         X_train, X_test = X_train.T, X_test.T
         y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
         d, n = X_train.shape
-         # Display results
-        print("Shapes:")
-        print("X_train:", X_train.shape)  # (features, samples)
-        print("y_train:", y_train.shape)  # (samples, 1)
-        print("X_test:", X_test.shape)  # (features, samples)
-        print("y_test:", y_test.shape)  # (samples,)
+       
         
         # Linear regression baseline
         w_linear = np.linalg.inv(X_train @ X_train.T)@(X_train @ y_train)
@@ -126,7 +121,7 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         all_errors.append(error)
         print("OLS is:", w_linear)
         print("Torrent is:", w_torrent)
-        print("Error is:", error.info())
+        print("Error is:", error)
         
         all_linear_preds.append(Y_pred_test_linear)
         all_torrent_preds.append(Y_pred_test_torrent)
@@ -190,33 +185,9 @@ def plot_errors_vs_beta(X, y, betas, num_runs=2):
 # === Example usage ===
 test_perc = 0.2
 script_dir = os.path.dirname(os.path.abspath(__file__))
-'''
-csv_names = [
-    "shown_cz_d_med_hh_inc.csv",
-    "shown_cz_d_frac_college_graduates.csv",
-    "shown_cz_d_poverty_rate.csv",
-    "shown_cz_d_share_non_white.csv"
-]
-suffixes = ["_hh", "_college", "_poverty", "_population"]
-feat = [
-    'Change_in_Fraction_of_Non-White_Population',
-    'Change_in_Fraction_of_College_Graduates',
-    'Change_in_Poverty_Rate'
-]
-lab = 'Change_in_Median_Household_Income'
-'''
 
-csv_names = [
-    "shown_cz_kfr_rP_gP_pall.csv",
-    "shown_cz_hours_yr_rP_gP_pall.csv",
-    "shown_cz_wageflex_rank_rP_gP_pall.csv",
-]
-suffixes = ["_Week", "_Wage", "_poverty", "_population"]
-feat = [
-    'Hours_Worked_Per_Week_at_Age_35_rP_gP_pall',
-    'Hourly_Wage_$/hour_at_Age_35_rP_gP_pall',
-]
-lab = 'Household_Income_at_Age_35_rP_gP_pall'
+
+
 X, y = read_from_file("cz_outcomes.csv"
                       ,[
                         #'par_rank_pooled_pooled_mean',
@@ -224,7 +195,6 @@ X, y = read_from_file("cz_outcomes.csv"
                          'work_26_pooled_pooled_mean'
                          ],
                          'working_pooled_pooled_mean', test_perc, intercept=0)
-#X, y = read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc=test_perc, intercept=0)
 
 #betas = [0.1, 0.15, 0.2, 0.25]
 betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]

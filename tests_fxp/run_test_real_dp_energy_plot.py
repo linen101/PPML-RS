@@ -37,13 +37,6 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     dp_X = 7.55
     dp_Y = 7.55
     
-    # Display results
-    print("Shapes:")
-    print("X_train:", X_train.shape)  # (features, samples)
-    print("Y_train:", Y_train.shape)  # (samples, 1)
-    print("X_test:", X_test.shape)  # (features, samples)
-    print("Y_test:", Y_test.shape)  # (samples,)
-    
 
     # Normalize rows of X
     d, n = X_train.shape
@@ -65,7 +58,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     # TORRENT regression
     
     w_torrent, _ = torrent_admm_fxp_analyze_gauss(
-        X_parts, y_parts, beta=beta,
+        X_parts_fxp, y_parts_fxp, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y
     )
@@ -78,7 +71,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # Error
     error = np.linalg.norm(w_torrent - w_linear) * norm_w_inv       #cast to fxo through norm
-    print("Error is:", error)
+    print("Error is:", error.info())
     return error, Y_pred_test_linear, Y_pred_test_torrent
 
 # -------------------
