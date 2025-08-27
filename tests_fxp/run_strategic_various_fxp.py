@@ -83,12 +83,12 @@ def run_experiment(
             )
             
             error = fxp(0)
-           
+            w_star = fxp(w_star)
             # Normalized error
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
             norm_w_inv = fxp(norm_w_inv)
-            error = (np.linalg.norm(w_torrent - w_star) )
+            error = fxp(np.linalg.norm(w_torrent - w_star) )
             print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error.info()}")
             error_accum += error
         
@@ -129,7 +129,6 @@ strategies = {
 # ========== Run and plot experiments ========== #
 def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     palette = sns.color_palette("colorblind", len(strategies))
-    '''
     # 1. Error vs Dimension
     plt.figure(figsize=(14,8))
     for (name, fn), color in zip(strategies.items(), palette):
@@ -146,7 +145,6 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     plt.grid(False)
     plt.savefig(f"error_trip-beta-{fixed_beta}-synthetic.png", dpi=300, bbox_inches="tight")
     plt.show()
-    '''
     # 2. Error vs Corruption Rate
     plt.figure(figsize=(14,8))
     for (name, fn), color in zip(strategies.items(), palette):
