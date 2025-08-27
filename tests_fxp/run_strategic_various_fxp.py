@@ -26,7 +26,7 @@ from fixed_point.fixed_point_helpers import *
 def run_experiment(
     mode="dimension",
     corruption_fn=None,
-    num_trials=2,
+    num_trials=10,
     n=2000,
     d_values=[10, 25, 50, 100],
     alpha_values=[0.1, 0.2, 0.3, 0.4],
@@ -71,7 +71,6 @@ def run_experiment(
             y_parts = split_matrix_Y(Y_cor, m, int(n*(1-test_perc)))
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             beta = alpha + 0.1
-            
             w_torrent, _ = torrent_admm_dp(
                 X_parts, y_parts, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
@@ -81,15 +80,14 @@ def run_experiment(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
             )
-            
             '''
             #error = fxp(0)
            
             # Normalized error
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
-            #norm_w_inv = fxp(norm_w_inv)
-            error = np.linalg.norm(w_torrent - w_star) 
+            norm_w_inv = fxp(norm_w_inv)
+            error = (np.linalg.norm(w_torrent - w_star) )
             print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
             error_accum += error
         
@@ -130,11 +128,12 @@ strategies = {
 # ========== Run and plot experiments ========== #
 def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     palette = sns.color_palette("colorblind", len(strategies))
-
+    '''
     # 1. Error vs Dimension
     plt.figure(figsize=(14,8))
     for (name, fn), color in zip(strategies.items(), palette):
         d_vals, errors = run_experiment(mode="dimension", corruption_fn=fn, n=n, alpha_values=[fixed_beta])
+        print("Errors d:", errors)
         plt.plot(d_vals, errors, marker='o', linestyle="--", label=name, color=color, linewidth=2)
 
     plt.xlabel("Dimension (d)", fontsize=25)
@@ -146,11 +145,12 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     plt.grid(False)
     plt.savefig(f"error_trip-beta-{fixed_beta}.png", dpi=300, bbox_inches="tight")
     plt.show()
-
+    '''
     # 2. Error vs Corruption Rate
     plt.figure(figsize=(14,8))
     for (name, fn), color in zip(strategies.items(), palette):
         alpha_vals, errors = run_experiment(mode="alpha", corruption_fn=fn, n=n, d_values=[fixed_d], dp_values=[fixed_dp])
+        print("Errors β:", errors)
         plt.plot(alpha_vals, errors, marker='s', linestyle="--", label=name, color=color, linewidth=2)
 
     plt.xlabel("Corruption Rate (β)", fontsize=25)
