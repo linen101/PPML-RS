@@ -72,6 +72,8 @@ def run_tests_fxp_d(n, num_trials=10):
             w_corrupt = additive + w_star * multiplicative
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
+            norm_w_inv = fxp(norm_w_inv)
+             
             #print(f'w star : {w_star}')
             #print(f'w star norm: {norm_w}')
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
@@ -87,13 +89,13 @@ def run_tests_fxp_d(n, num_trials=10):
             
             # Run Torrent fxp
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
-            
+            w_star = fxp(w_star)
             w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_w_val)
-            w_errors_d_torrent_fxp[i] += np.linalg.norm(abs(w_torrent_fxp - w_star)) * norm_w_inv
+            w_errors_d_torrent_fxp[i] += fxp(np.linalg.norm(w_torrent_fxp - w_star)) * norm_w_inv
             print(f' sum trials error DP OLS: {w_errors_d_torrent_fxp[i]}')
             
             w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_noise_x_val, dp_noise_y_val)
-            w_errors_d_torrent[i] += (np.linalg.norm(abs(w_torrent - w_star)) * norm_w_inv)
+            w_errors_d_torrent[i] += fxp(np.linalg.norm(w_torrent - w_star)) * norm_w_inv
             print(f' sum trials error Analyze Gauss: {w_errors_d_torrent[i]}')
         
     # Compute averages

@@ -3,7 +3,7 @@ import fxpmath as fxpmath
 from fxpmath import Fxp
 import math
 
-FXP_CONFIG = dict(signed=True, n_word=32, n_frac=14)
+FXP_CONFIG = dict(signed=True, n_word=16, n_frac=8)
 def fxp(val): return Fxp(val, **FXP_CONFIG)
 
 def split_matrix_fxp(X_parts, Y_parts):
