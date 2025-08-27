@@ -72,7 +72,7 @@ def run_tests_fxp_d(n, num_trials=10):
             w_corrupt = additive + w_star * multiplicative
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
-            norm_w_inv = fxp(norm_w_inv)
+            #norm_w_inv = fxp(norm_w_inv)
              
             #print(f'w star : {w_star}')
             #print(f'w star norm: {norm_w}')
