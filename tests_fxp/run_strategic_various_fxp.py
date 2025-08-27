@@ -73,7 +73,8 @@ def run_experiment(
             )
 
             # Normalized error
-            w_norm = 1 / np.linalg.norm(w_star)
+            norm_w = np.linalg.norm((w_star))
+            norm_w_inv = 1 / norm_w
             error = np.linalg.norm(w_torrent - w_star) * w_norm
             print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
             error_accum += error
