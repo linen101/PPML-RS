@@ -89,7 +89,7 @@ def run_experiment(
             norm_w_inv = 1 / norm_w
             norm_w_inv = fxp(norm_w_inv)
             error = (np.linalg.norm(w_torrent - w_star) )
-            print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
+            print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error.info()}")
             error_accum += error
         
         num_trials_inv = 1 / num_trials
