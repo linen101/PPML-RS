@@ -43,7 +43,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     
     # OLS solution
     w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
-    norm_w = np.linalg.norm(w_linear)
+    norm_w = fxp(np.linalg.norm(w_linear))
     norm_w_inv = 1 / norm_w
     #norm_w_inv = fxp(norm_w_inv)
 
@@ -57,8 +57,11 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # TORRENT regression
     
-    w_torrent, _ = torrent_admm_fxp_analyze_gauss(
-        X_parts_fxp, y_parts_fxp, beta=beta,
+    #w_torrent, _ = torrent_admm_fxp_analyze_gauss
+    #( X_parts_fxp, y_parts_fxp, beta=beta, epsilon=0.1, rho=1, admm_steps=5, rounds=5, wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y)
+    
+    w_torrent, _ = torrent_admm_ag(
+        X_parts, y_parts, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_noise_x=dp_X, dp_noise_y=dp_Y
     )
@@ -71,7 +74,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 
     # Error
     fxp(w_linear)
-    error = fxp(np.linalg.norm(w_torrent - w_linear))        #cast to fxo through norm
+    error = fxp(np.linalg.norm(w_torrent - w_linear))*norm_w_inv        #cast to fxo through norm
     print("OLS is:", w_linear)
     print("Torrent is:", w_torrent)
     print("Error is:", error.info())
