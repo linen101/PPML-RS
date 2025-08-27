@@ -43,7 +43,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     
     # OLS solution
     w_linear = np.linalg.inv(X_train @ X_train.T) @ (X_train @ Y_train)
-    norm_w = fxp(np.linalg.norm(w_linear))
+    norm_w = (np.linalg.norm(w_linear))
     norm_w_inv = 1 / norm_w
     #norm_w_inv = fxp(norm_w_inv)
 
@@ -83,7 +83,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
 # -------------------
 # Experiment
 # -------------------
-def run_experiment(betas, runs=5):
+def run_experiment(betas, runs=1):
     avg_errors, std_errors = [], []
     all_linear_preds, all_torrent_preds = {}, {}
 
@@ -148,10 +148,6 @@ avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
 # 1. Error vs Beta with std shading
 plt.figure(figsize=(14, 8))
 plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
-plt.fill_between(betas,
-                 np.array(avg_errors) - np.array(std_errors),
-                 np.array(avg_errors) + np.array(std_errors),
-                 alpha=0.2, color='purple')
 plt.xlabel(r"$\beta$")
 plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
 plt.title("TORRENT Error vs. β")
