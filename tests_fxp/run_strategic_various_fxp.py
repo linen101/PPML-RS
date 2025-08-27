@@ -26,7 +26,7 @@ from fixed_point.fixed_point_helpers import *
 def run_experiment(
     mode="dimension",
     corruption_fn=None,
-    num_trials=1,
+    num_trials=10,
     n=2000,
     d_values=[10, 25, 50, 100],
     alpha_values=[0.1, 0.2, 0.3, 0.4],
