@@ -56,19 +56,19 @@ def run_tests_dp_1d_avg_ols(num_trials):
     # original data (non-corrupted)
     plt.scatter(X_aug[1, :], Y, label="Original Data", color="black", alpha=0.8)
 
-    # highlight corrupted locations
-    #plt.scatter(X_aug[1, corrupted_indices], Y[corrupted_indices], label="Corruption Locations",
-    #            color="darkmagenta", marker="v", edgecolors="black", s=150, alpha=0.8)
+    #highlight corrupted locations
+    plt.scatter(X_aug[1, corrupted_indices], Y[corrupted_indices], label="Corruption Locations",
+                color="darkmagenta", marker="v", edgecolors="black", s=150, alpha=0.8)
 
     # corrupted data points
-    #plt.scatter(X_aug[1, corrupted_indices], Y_corrupted[corrupted_indices], label="Strategically Corrupted Points",
-    #            color="blueviolet", marker="x", s=100)
+    plt.scatter(X_aug[1, corrupted_indices], Y_corrupted[corrupted_indices], label="Strategically Corrupted Points",
+                color="blueviolet", marker="x", s=100)
     
     plt.plot(x_vals.T, y_vals_true, label=f'True Model', color="blue", linestyle="solid")
     
     # adversarial Model (-2x -10)
-    #y_vals_adv = x_vals_aug.T @ w_corrupt
-    #plt.plot(x_vals.T, y_vals_adv, label=f'Adversarial Model $(4.5x + 4.5)$', color="red", linestyle="dotted")
+    y_vals_adv = x_vals_aug.T @ w_corrupt
+    plt.plot(x_vals.T, y_vals_adv, label=f'Adversarial Model $(4.5x + 4.5)$', color="red", linestyle="dotted")
     
     #ols
     plt.plot(x_vals.T, predictions_ols, label="OLS Regression", color="mediumpurple", linestyle="dashdot")

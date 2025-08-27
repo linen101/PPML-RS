@@ -86,7 +86,7 @@ def run_tests_dp_1d(num_trials):
 
 def run_tests_dp_1d_avg(num_trials):
     # Generate Dataset with Intercept
-    n = 1000 # Number of samples
+    n = 100 # Number of samples
     sigma = 0.1
     alpha = 0.1  # 10% of data points are corrupted
     beta = alpha + 0.1
@@ -177,10 +177,10 @@ def run_tests_dp_1d_avg(num_trials):
 
 
 # Run the tests with averaging
-num_trials = 10
+num_trials = 2
 
 
 # Run the average version
 #run_tests_dp_1d_avg(num_trials)
 
-#run_tests_dp_1d(num_trials)
+run_tests_dp_1d(num_trials)
