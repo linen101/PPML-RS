@@ -77,7 +77,13 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         X_train, X_test = X_train.T, X_test.T
         y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
         d, n = X_train.shape
-
+         # Display results
+        print("Shapes:")
+        print("X_train:", X_train.shape)  # (features, samples)
+        print("y_train:", y_train.shape)  # (samples, 1)
+        print("X_test:", X_test.shape)  # (features, samples)
+        print("y_test:", y_test.shape)  # (samples,)
+        
         # Linear regression baseline
         w_linear = np.linalg.inv(X_train @ X_train.T)@(X_train @ y_train)
         #w_linear = LinearRegression(fit_intercept=False).fit(X_train.T, y_train).coef_
@@ -93,7 +99,6 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         y_parts = split_matrix_Y(Y_cor, 2, n)
         X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
         
-
         # Torrent ADMM (fxp)
         w_torrent, _ = torrent_admm_fxp_analyze_gauss(
             X_parts_fxp, y_parts_fxp, beta=beta,
@@ -108,11 +113,12 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
             wstar=None, dp_X=dp_X, dp_y=dp_Y
         )
         '''
+        
 
         # Predictions
         Y_pred_test_linear = np.matmul(X_test.T, w_linear)
-        X_test_fxp = fxp(X_test)
-        Y_pred_test_torrent = np.matmul(X_test_fxp.T, w_torrent)
+        X_test = fxp(X_test)
+        Y_pred_test_torrent = np.matmul(X_test.T, w_torrent)
 
         # Error
         
@@ -219,8 +225,8 @@ X, y = read_from_file("cz_outcomes.csv"
 #X, y = read_from_multiple_files(csv_names, feat, lab, suffixes, test_perc=test_perc, intercept=0)
 
 #betas = [0.1, 0.15, 0.2, 0.25]
-betas = [0.1, 0.15, 0.2, 0.25, 0.3]
-avg_errors = plot_errors_vs_beta(X, y, betas, num_runs=2)
+betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
+avg_errors = plot_errors_vs_beta(X, y, betas, num_runs=10)
 
 print("Betas:", betas)
 print("Average Errors:", avg_errors)
