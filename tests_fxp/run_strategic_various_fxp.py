@@ -48,8 +48,10 @@ def run_experiment(
         x_dp_pairs = [(alpha_values[i], dp_values[0]) for i in range(len(alpha_values))]  # dp fixed
 
     for x, dp_w in x_dp_pairs:
-        error_accum=fxp(0)
-        avg_error=fxp(0)
+        #error_accum=fxp(0)
+        #avg_error=fxp(0)
+        error = 0.0
+        avg_error = 0.0
         for trial in range(num_trials):
             d = x if mode == "dimension" else d_values[0]   # fix d in alpha experiments
             alpha = x if mode == "alpha" else 0.3           # fix corruption rate in dimension experiments
@@ -69,7 +71,7 @@ def run_experiment(
             y_parts = split_matrix_Y(Y_cor, m, int(n*(1-test_perc)))
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             beta = alpha + 0.1
-            '''
+            
             w_torrent, _ = torrent_admm_dp(
                 X_parts, y_parts, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
@@ -80,19 +82,19 @@ def run_experiment(
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
             )
             
-            
-            error = fxp(0)
+            '''
+            #error = fxp(0)
            
             # Normalized error
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
-            norm_w_inv = fxp(norm_w_inv)
+            #norm_w_inv = fxp(norm_w_inv)
             error = np.linalg.norm(w_torrent - w_star) 
             print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
             error_accum += error
         
         num_trials_inv = 1 / num_trials
-        num_trials_inv = fxp(num_trials_inv)
+        #num_trials_inv = fxp(num_trials_inv)
         avg_error = error_accum * num_trials_inv
         print(f"[{mode}] {x=} dp_w={dp_w} averaged error={avg_error}\n")
         results.append(avg_error)
