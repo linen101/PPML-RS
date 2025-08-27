@@ -68,7 +68,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
         wstar=None, dp_X=dp_X, dp_y=dp_Y
     )
     
-    w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
+    #w_torrent, _ = torrent(X_train, Y_cor, beta, epsilon=0.1, max_iters=5)
     # Predictions
     Y_pred_test_linear = X_test.T @ w_linear
     Y_pred_test_torrent = X_test.T @ w_torrent

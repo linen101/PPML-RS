@@ -90,7 +90,7 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         #w_linear = w_linear.T
         norm_w = np.linalg.norm(w_linear)
         norm_w_inv = 1 / norm_w
-
+        norm_w_inv = fxp(norm_w_inv)
         # Apply adversarial corruption
         Y_cor, _ = adversarial_corruption(X_train, y_train, alpha=beta, beta=10)
 
@@ -121,12 +121,12 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
         Y_pred_test_torrent = np.matmul(X_test.T, w_torrent)
 
         # Error
-        
-        error = np.linalg.norm(w_torrent - w_linear.T) 
+        w_linear = fxp(w_linear)
+        error = fxp(np.linalg.norm(w_torrent - w_linear.T) )
         all_errors.append(error)
         print("OLS is:", w_linear)
         print("Torrent is:", w_torrent)
-        print("Error is:", error)
+        print("Error is:", error.info())
         
         all_linear_preds.append(Y_pred_test_linear)
         all_torrent_preds.append(Y_pred_test_torrent)
