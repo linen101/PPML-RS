@@ -4,9 +4,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.model_selection import train_test_split
 
 
-def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2):
+def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2,i=0):
     """
     Creates a toy dataset.
 
@@ -51,13 +52,9 @@ def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2):
     n_test = int(n * test_percentage)
     n_train = n - n_test
 
-    X_train = X[:, :n_train]
-    Y_train = Y[:n_train, :]
+    X_train, X_test, y_train, y_test = train_test_split(X.T, Y.ravel(), test_size=0.33, random_state=42+i)
 
-    X_test = X[:, n_train:]
-    Y_test = Y[n_train:, :]
-
-    return X_train, Y_train, X_test, Y_test, w_star
+    return X_train.T, y_train.reshape(-1,1), X_test.T, y_test.reshape(-1,1), w_star
 
 def corrupt_dataset(X, Y, w_star, alpha, sigma, return_cor_indices=False):
     """

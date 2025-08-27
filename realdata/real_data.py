@@ -153,16 +153,16 @@ def read_data(file_path, input_columns, target_column):
     Y = np.array(Y_data).reshape(-1, 1)
     return X, Y
 
-def load_and_process_energy_data(test_percentage=0.2):
-    file_path = '/home/ubuntu/PPML-RS/realdata/energydata_complete.csv'
-    #file_path = '/home/linen/Desktop/PhD/project robust stats copy/robust-statistics-internal/main/realdata/energydata_complete.csv'
+def load_and_process_energy_data(test_percentage=0.2, i=0):
+    #file_path = '/home/ubuntu/PPML-RS/realdata/energydata_complete.csv'
+    file_path = '/home/linen/Desktop/PhD/project robust stats copy/robust-statistics-internal/main/realdata/energydata_complete.csv'
     input_columns = [3, 5, 7, 9, 11, 13, 15]
     #input_columns = [15]
     target_column = 19
 
     X, Y = read_data(file_path, input_columns, target_column)
     
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_percentage, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_percentage, random_state=42+i)
     
     return X_train, X_test, Y_train, Y_test 
     

@@ -18,7 +18,7 @@ if module_path not in sys.path:
 from synthetic.strategic_corruptions import  adversarial_corruption
 from synthetic.toy_dataset import generate_synthetic_dataset, corrupt_dataset
 from plots.plots import plot_regression_errors_n, plot_regression_errors_d, plot_iterations_n, plot_iterations_d
-from torrent.torrent import torrent, torrent_admm_dp, split_matrix, split_matrix_Y
+from torrent.torrent import torrent, torrent_admm_dp, split_matrix, split_matrix_Y, torrent_admm_ag
 from torrent.torrent_fxp import split_matrix_fxp, torrent_admm_fxp_analyze_gauss
 from decimal import *
 import seaborn as sns
@@ -29,21 +29,9 @@ markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 
 # -------------------
-# Load dataset
-# -------------------
-X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2)
-X_train = X_train.T
-X_test = X_test.T
-Y_train = Y_train.reshape(-1, 1)
-Y_test = Y_test.reshape(-1, 1)
-X_train = normalize(X_train, axis=0)
-X_test = normalize(X_test, axis=0)
-Y_train = normalize(Y_train, norm='max', axis=0) 
-Y_test = normalize(Y_test, norm='max', axis=0)
-# -------------------
 # Run function
 # -------------------
-def run(beta):
+def run(X_train, Y_train, X_test, Y_test, beta):
 
     dp_X = 7.55
     dp_Y = 7.55
@@ -74,7 +62,7 @@ def run(beta):
 
     # TORRENT regression
     
-    w_torrent, _ = torrent_admm_dp(
+    w_torrent, _ = torrent_admm_ag(
         X_parts, y_parts, beta=beta,
         epsilon=0.1, rho=1, admm_steps=5, rounds=5,
         wstar=None, dp_X=dp_X, dp_y=dp_Y
@@ -99,8 +87,24 @@ def run_experiment(betas, runs=5):
     for beta in betas:
         run_errors, linear_preds, torrent_preds = [], [], []
 
-        for _ in range(runs):
-            error, Y_pred_lin, Y_pred_tor = run( beta)
+        for irun in range(runs):
+            
+            # -------------------
+            # Load dataset
+            # -------------------
+            X_train, X_test, Y_train, Y_test = load_and_process_energy_data(test_percentage=0.2, i=irun)
+            X_train = X_train.T
+            X_test = X_test.T
+            Y_train = Y_train.reshape(-1, 1)
+            Y_test = Y_test.reshape(-1, 1)
+            X_train = normalize(X_train, axis=0)
+            X_test = normalize(X_test, axis=0)
+            Y_train = normalize(Y_train, norm='max', axis=0) 
+            Y_test = normalize(Y_test, norm='max', axis=0)
+            # -------------------
+            # experiment
+            # -------------------
+            error, Y_pred_lin, Y_pred_tor = run(X_train, Y_train, X_test, Y_test, beta)
             run_errors.append(error)
             linear_preds.append(Y_pred_lin)
             torrent_preds.append(Y_pred_tor)
@@ -119,7 +123,7 @@ def run_experiment(betas, runs=5):
 # Run + Plots
 # -------------------
 betas = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-runs = 10
+runs = 2
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
@@ -136,21 +140,21 @@ plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$')
 plt.title("TORRENT Error vs. β")
 plt.legend()
 plt.grid(False)
-plt.savefig(f"error_betas.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"error_beta_energy.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 # 2. Scatter plots (OLS vs TORRENT)
 for beta in betas:
     plt.figure(figsize=(14, 8))
     plt.scatter(Y_test, avg_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
-    plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.7, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
+    plt.scatter(Y_test, avg_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TORRENT ($\\beta={beta}$)')
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
     plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
     plt.legend()
     plt.grid(True)
     # Save figure (PNG, high resolution)
-    plt.savefig(f"scatter_beta_{beta}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"scatter_beta_{beta}_energy.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 print("Averaged Errors:", avg_errors)

@@ -72,7 +72,7 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
     for run in range(num_runs):
         # Split into train/test
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_perc, random_state=42
+            X, y, test_size=test_perc, random_state=42+run
         )
         X_train, X_test = X_train.T, X_test.T
         y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
@@ -150,7 +150,8 @@ def run_tests_opportunity_atlas(X, y, beta, num_runs=2):
     plt.ylabel("Predicted")
     plt.title(f"Actual vs. Predicted (Average over 10 Runs), β={beta}")
     plt.legend()
-    plt.grid(True)
+    plt.grid(False)
+    plt.savefig(f"scatter_beta_{beta}_atlas.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     return np.mean(all_errors), np.std(all_errors)
@@ -182,6 +183,7 @@ def plot_errors_vs_beta(X, y, betas, num_runs=2):
     plt.legend()
     plt.grid(False)
     plt.show()
+    plt.savefig(f"error_beta_atlas.png", dpi=300, bbox_inches="tight")
     return avg_errors, std_errors
 
 

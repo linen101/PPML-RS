@@ -57,7 +57,7 @@ def run_experiment(
             alpha = x if mode == "alpha" else 0.3           # fix corruption rate in dimension experiments
 
             # Generate data
-            X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
+            X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc, trial)
 
             # Choose corrupted model
             w_corrupt = corruption_fn(w_star, d)
@@ -143,7 +143,7 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     plt.yticks(fontsize=25)
     plt.legend(fontsize=20)
     plt.grid(False)
-    plt.savefig(f"error_trip-beta-{fixed_beta}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"error_trip-beta-{fixed_beta}-synthetic.png", dpi=300, bbox_inches="tight")
     plt.show()
     '''
     # 2. Error vs Corruption Rate
@@ -160,7 +160,7 @@ def plot_results(n=2000, fixed_d=25, fixed_beta=0.3, fixed_dp=0.00736297528):
     plt.yticks(fontsize=25)
     plt.legend(fontsize=20)
     plt.grid(False)
-    plt.savefig(f"error_trip-d-{fixed_d}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"error_trip-d-{fixed_d}-synthetic.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 if __name__ == "__main__":
