@@ -16,9 +16,10 @@ from synthetic.strategic_corruptions import (
     
 )
 from synthetic.toy_dataset import generate_synthetic_dataset
-from torrent.torrent import torrent_admm, split_matrix, split_matrix_Y
+from torrent.torrent import torrent_admm, split_matrix, split_matrix_Y, torrent_admm_dp
 from torrent.torrent_fxp import torrent_admm_fxp, torrent_admm_fxp_analyze_gauss
 from fixed_point.fixed_point_helpers import *
+#dp_values=[0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554],
 
 
 # ========== Helper: Run experiment ========== #
@@ -29,7 +30,7 @@ def run_experiment(
     n=2000,
     d_values=[10, 25, 50, 100],
     alpha_values=[0.1, 0.2, 0.3, 0.4],
-    dp_values=[0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554],
+    dp_values = [0.00203186667,0.00736297528,0.01993442884,0.05482502464],
     sigma=0.1,
     test_perc=0.2,
     epsilon=0.1,
@@ -47,7 +48,8 @@ def run_experiment(
         x_dp_pairs = [(alpha_values[i], dp_values[0]) for i in range(len(alpha_values))]  # dp fixed
 
     for x, dp_w in x_dp_pairs:
-        error_accum = 0.0
+        error_accum=fxp(0)
+        avg_error=fxp(0)
         for trial in range(num_trials):
             d = x if mode == "dimension" else d_values[0]   # fix d in alpha experiments
             alpha = x if mode == "alpha" else 0.3           # fix corruption rate in dimension experiments
@@ -67,19 +69,31 @@ def run_experiment(
             y_parts = split_matrix_Y(Y_cor, m, int(n*(1-test_perc)))
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
             beta = alpha + 0.1
+            '''
+            w_torrent, _ = torrent_admm_dp(
+                X_parts, y_parts, beta, epsilon, rho=1,
+                admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
+            )
+            '''
             w_torrent, _ = torrent_admm_fxp(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho=1,
                 admm_steps=5, rounds=5, wstar=None, dp_w=dp_w
             )
-
+            
+            
+            error = fxp(0)
+           
             # Normalized error
             norm_w = np.linalg.norm((w_star))
             norm_w_inv = 1 / norm_w
-            error = np.linalg.norm(w_torrent - w_star) * norm_w_inv
+            norm_w_inv = fxp(norm_w_inv)
+            error = np.linalg.norm(w_torrent - w_star) 
             print(f"[{mode}] {x=} dp_w={dp_w} trial {trial+1}: error={error}")
             error_accum += error
-
-        avg_error = error_accum / num_trials
+        
+        num_trials_inv = 1 / num_trials
+        num_trials_inv = fxp(num_trials_inv)
+        avg_error = error_accum * num_trials_inv
         print(f"[{mode}] {x=} dp_w={dp_w} averaged error={avg_error}\n")
         results.append(avg_error)
 

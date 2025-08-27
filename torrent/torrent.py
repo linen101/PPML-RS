@@ -602,7 +602,62 @@ def torrent_dp(X, y,  beta, epsilon, dp_epsilon, dp_delta, max_iters):
     w = w - dp_noise
     return w, iteration
 
-def torrent_admm_dp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_X=0, dp_y=0):
+def torrent_admm_dp(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_w=0):
+    """_summary_
+
+    Args:
+        X (_type_): containing parties feature vectors
+        y (_type_): containing parties responses
+        beta (_type_): corruption rate
+        epsilon (_type_): model recovery target error
+        rho (_type_): admm rho
+        admm_steps (_type_): admm rounss
+        rounds (int, optional): torrent rounds
+
+    Returns:
+        _type_: model, rounds
+    """
+    # get number of parties
+    m = X.shape[0]
+    
+    # create empty A, b, S matrices
+    A = np.empty(m, dtype=object)
+    b = np.empty(m, dtype=object)
+    S = np.empty(m, dtype=object)
+    
+    # create empty matrices to compute the residual error for each party
+    dot_prod = np.empty(m, dtype=object)
+    r = np.empty(m, dtype=object)
+
+    # get number of features
+    d,_ = X[0].shape
+    
+    # initialize parameters w_0 = 0, S_0 = [n]
+    w = np.zeros(d)
+    w = w.reshape(-1,1)
+    
+    for i in range(m):
+        _,ni = X[i].shape
+        S[i] = np.diagflat(np.ones(ni))
+    iteration=0
+    
+  
+    for iteration in range(rounds): 
+            #w = admm_analyze_gauss(X, y, S, rho, admm_steps, dp_X, dp_y) 
+            w = admm(X, y, S, rho, admm_steps) + dp_w*np.random.randn(d, 1)
+            for i in range(m):
+                # Compute dot product <w,x>
+                dot_prod[i] = np.matmul(X[i].T,w)
+                # Compute residuals r
+                r[i] = abs(dot_prod[i] - y[i])            #y - wx
+            S = hard_thresholding_admm(r, 1-beta) 
+            iteration= iteration+1      
+    #w = admm(X, y, S, rho, admm_steps)
+    #print(np.linalg.norm(abs(w - wstar)) )
+    return w,iteration
+
+
+def torrent_admm_ag(X, y,  beta, epsilon, rho, admm_steps, rounds = 10, wstar= None, dp_X=0, dp_y=0):
     """_summary_
 
     Args:
