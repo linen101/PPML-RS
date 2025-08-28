@@ -37,8 +37,6 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     dp_X = 7.55
     dp_Y = 7.55
     
-
-    # Normalize rows of X
     d, n = X_train.shape
     
     # OLS solution
@@ -149,7 +147,7 @@ avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
 
 # 1. Error vs Beta with std shading
 plt.figure(figsize=(14, 8))
-plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
+plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error: {avg_errors}")
 plt.xlabel(r"$\beta$", fontsize=25)
 plt.ylabel(r'Error $\|w^* - \hat{w}\| / \|w^*\|$', fontsize=25)
 plt.title("TORRENT Error vs. β", fontsize=25)

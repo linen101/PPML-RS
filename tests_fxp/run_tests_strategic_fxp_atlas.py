@@ -163,7 +163,7 @@ def plot_errors_vs_beta(X, y, betas, num_runs=2):
 
     # Line plot
     plt.figure(figsize=(8, 6))
-    plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error")
+    plt.plot(betas, avg_errors, marker='o', linestyle='-', color='purple', label="Error: {avg_errors}")
     plt.fill_between(betas,
                      np.array(avg_errors) - np.array(std_errors),
                      np.array(avg_errors) + np.array(std_errors),
