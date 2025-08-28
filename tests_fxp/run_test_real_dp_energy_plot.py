@@ -145,7 +145,7 @@ def run_experiment(betas, runs=1):
 # Run + Plots
 # -------------------
 betas = [0.1,  0.2, 0.3,  0.4]
-runs = 1
+runs = 10
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
