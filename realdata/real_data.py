@@ -6,6 +6,7 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import csv
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import normalize
 
 
 def load_and_process_gas_sensor_data(data_folder="gas-sensor-array-temperature-modulation", test_percentage=0.2):
@@ -161,7 +162,14 @@ def load_and_process_energy_data(test_percentage=0.2, i=0):
     target_column = 19
 
     X, Y = read_data(file_path, input_columns, target_column)
-    
+    n , d = X.shape
+    for i in range(n):
+        Y[i] = Y[i]/100
+        X[i] = X[i]/100
+        #for j in range(d):
+        #    X[i][j] = X[i][j]/100
+    #X = normalize(X, axis=1)
+      
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_percentage, random_state=42+i+1)
     
     return X_train, X_test, Y_train, Y_test 

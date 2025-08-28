@@ -52,7 +52,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     X_parts = split_matrix(X_train, 2, n)
     y_parts = split_matrix_Y(Y_cor, 2, n)
     X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
-
+    
     # TORRENT regression
     
     w_torrent, _ = torrent_admm_fxp_analyze_gauss(
@@ -71,7 +71,7 @@ def run(X_train, Y_train, X_test, Y_test, beta):
     Y_pred_test_linear = X_test.T @ w_linear
     X_test = fxp(X_test)
     Y_pred_test_torrent = np.matmul(X_test.T,w_torrent)
-
+    
     # Error
     fxp(w_linear)
     error = fxp(np.linalg.norm(w_torrent - w_linear))*norm_w_inv        #cast to fxo through norm
@@ -100,17 +100,22 @@ def run_experiment(betas, runs=1):
             X_test = X_test.T
             Y_train = Y_train.reshape(-1, 1)
             Y_test = Y_test.reshape(-1, 1)
-            X_train = normalize(X_train, axis=0)
-            X_test = normalize(X_test, axis=0)
-            Y_train = normalize(Y_train, norm='max', axis=0) 
-            Y_test = normalize(Y_test, norm='max', axis=0)
+            print("X_train: ",X_train[0,1:100])
+            #n , d = X_train.shape
+            #for i in range(n):
+            #    X_train[i] = X_train[i]/np.linalg.norm(X_train[i])
+            #print("X_train: ",X_train[0,1:100])
+            #X_test = normalize(X_test, axis=1)
+            #Y_train = normalize(Y_train, norm='max', axis=0) 
+            #Y_test = normalize(Y_test, norm='max', axis=0)
             # -------------------
-            # experiment
+            # 1. experiment
             # -------------------
             error, Y_pred_lin, Y_pred_tor = run(X_train, Y_train, X_test, Y_test, beta)
             run_errors.append(error)
             linear_preds.append(Y_pred_lin)
             torrent_preds.append(Y_pred_tor)
+           
 
         avg_errors.append(np.mean(run_errors))
         print("Average Errors:", avg_errors)
@@ -120,9 +125,7 @@ def run_experiment(betas, runs=1):
         all_linear_preds[beta] = np.mean(linear_preds, axis=0)
         all_torrent_preds[beta] = np.mean(torrent_preds, axis=0)
 
-        
-    # 2. Scatter plots (OLS vs TORRENT)
-    for beta in betas:
+        # 2. Scatter plots (OLS vs TORRENT)
         plt.figure(figsize=(14, 8))
         plt.scatter(Y_test, all_linear_preds[beta], alpha=0.7, color='blue', marker='o', label='OLS ($\\beta=0$)')
         plt.scatter(Y_test, all_torrent_preds[beta], alpha=0.9, color='violet', marker='v', label=f'TRIP* ($\\beta={beta}$)')
@@ -134,13 +137,15 @@ def run_experiment(betas, runs=1):
         # Save figure (PNG, high resolution)
         plt.savefig(f"scatter_beta_{beta}_energy.png", dpi=300, bbox_inches="tight")
         plt.show()
+
+        
     return avg_errors, std_errors, all_linear_preds, all_torrent_preds
 
 # -------------------
 # Run + Plots
 # -------------------
 betas = [0.1,  0.2, 0.3,  0.4]
-runs = 10
+runs = 1
 avg_errors, std_errors, avg_linear_preds, avg_torrent_preds = run_experiment(
      betas, runs=runs
 )
