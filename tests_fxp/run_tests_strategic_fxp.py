@@ -88,7 +88,7 @@ def run_tests_fxp_d(num_trials=10):
                     X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                     admm_steps, robust_rounds, wstar=None, dp_w=dp_w_val
                 )
-                error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star_fxp)) * norm_w_inv    # cast to fxp
+                error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star)) * norm_w_inv    # cast to fxp
                 print("d :", d)
                 print("Error DP: ", error_torrent.info())
                 #print("Torrent DP: ", w_torrent_fxp)
@@ -100,7 +100,7 @@ def run_tests_fxp_d(num_trials=10):
                     admm_steps, robust_rounds, wstar=None,
                     dp_noise_x=dp_noise_x_val, dp_noise_y=dp_noise_y_val
                 )
-                error_gauss = fxp(np.linalg.norm(w_torrent - w_star_fxp)) * norm_w_inv      # cast to fxp
+                error_gauss = fxp(np.linalg.norm(w_torrent - w_star)) * norm_w_inv      # cast to fxp
                 print("Error AG: ", error_gauss.info())
                 #print("Torrent AG: ", w_torrent)
                 errors_gauss[trial, i] = (error_gauss)
