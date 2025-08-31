@@ -65,7 +65,7 @@ def run_tests_fxp_d(num_trials=10):
         for trial in range(num_trials):
             for i, d in enumerate(d_values):
                 # generate dataset
-                X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
+                X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc, i=trial)
                 w_corrupt = additive + w_star * multiplicative
                 norm_w = np.linalg.norm(w_star)
                 norm_w_inv = 1 / norm_w
@@ -164,7 +164,7 @@ def run_tests_fxp_alpha(num_trials=10):
     for trial in range(num_trials):
         for j, alpha in enumerate(alpha_values):
             X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(
-                n, dimension, sigma, test_perc
+                n, dimension, sigma, test_perc, i=trial
             )
             w_corrupt = multiplicative * w_star + additive
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
