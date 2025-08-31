@@ -59,8 +59,8 @@ def run_tests_fxp_d(num_trials=10):
         dp_noise_y_list = params["dp_noise_y"]
 
         # store trial errors for mean/var computation
-        errors_dp = np.zeros((num_trials, len(d_values)))
-        errors_gauss = np.zeros((num_trials, len(d_values)))
+        errors_dp = fxp(np.zeros((num_trials, len(d_values))))
+        errors_gauss = fxp(np.zeros((num_trials, len(d_values))))
 
         for trial in range(num_trials):
             for i, d in enumerate(d_values):
@@ -88,8 +88,8 @@ def run_tests_fxp_d(num_trials=10):
                     X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                     admm_steps, robust_rounds, wstar=None, dp_w=dp_w_val
                 )
-                error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star_fxp)) * norm_w_inv
-                errors_dp[trial, i] = float(error_torrent)
+                error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star_fxp)) * norm_w_inv    # cast to fxp
+                errors_dp[trial, i] = (error_torrent)
 
                 # --- Analyze Gaussian noise ---
                 w_torrent, _ = torrent_admm_fxp_analyze_gauss(
@@ -97,8 +97,8 @@ def run_tests_fxp_d(num_trials=10):
                     admm_steps, robust_rounds, wstar=None,
                     dp_noise_x=dp_noise_x_val, dp_noise_y=dp_noise_y_val
                 )
-                error_gauss = fxp(np.linalg.norm(w_torrent - w_star_fxp)) * norm_w_inv
-                errors_gauss[trial, i] = float(error_gauss)
+                error_gauss = fxp(np.linalg.norm(w_torrent - w_star_fxp)) * norm_w_inv      # cast to fxp
+                errors_gauss[trial, i] = (error_gauss)
 
         # Compute mean + variance
         mean_dp = np.mean(errors_dp, axis=0)
@@ -153,8 +153,8 @@ def run_tests_fxp_alpha(num_trials=10):
     train_size = n - int(n * test_perc)
 
     # Store trial errors: shape (num_trials, len(alpha_values))
-    errors_gauss = np.zeros((num_trials, len(alpha_values)))
-    errors_dp = np.zeros((num_trials, len(alpha_values)))
+    errors_gauss = fxp(np.zeros((num_trials, len(alpha_values))))
+    errors_dp = fxp(np.zeros((num_trials, len(alpha_values))))
 
     for trial in range(num_trials):
         for j, alpha in enumerate(alpha_values):
@@ -180,15 +180,15 @@ def run_tests_fxp_alpha(num_trials=10):
                 admm_steps, robust_rounds, w_star,
                 dp_noise_x, dp_noise_y
             )
-            errors_gauss[trial, j] = np.linalg.norm(w_torrent - w_star) * norm_w_inv
-
+            errors_gauss = fxp(np.linalg.norm(w_torrent - w_star)) * norm_w_inv
+            errors_gauss[trial, i] = (error_gauss)
             # --- Torrent DP fxp ---
             w_torrent_fxp, _ = torrent_admm_fxp(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                 admm_steps, robust_rounds, w_star, dp_w
             )
-            errors_dp[trial, j] = np.linalg.norm(w_torrent_fxp - w_star) * norm_w_inv
-
+            errors_dp = fxp(np.linalg.norm(w_torrent_fxp - w_star)) * norm_w_inv
+            errors_dp[trial, j] = error_dp
     # Compute mean and variance
     mean_gauss = np.mean(errors_gauss, axis=0)
     var_gauss = np.var(errors_gauss, axis=0)
