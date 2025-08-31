@@ -127,7 +127,7 @@ def run_tests_fxp_d(num_trials=10):
 
 
 # Run
-results = run_tests_fxp_d(num_trials=5)
+#results = run_tests_fxp_d(num_trials=5)
 
 def run_tests_fxp_alpha(num_trials=10):
     # Parameters
@@ -156,8 +156,8 @@ def run_tests_fxp_alpha(num_trials=10):
     train_size = n - int(n * test_perc)
 
     # Store trial errors: shape (num_trials, len(alpha_values))
-    errors_gauss = fxp(np.zeros((num_trials, len(alpha_values))))
-    errors_dp = fxp(np.zeros((num_trials, len(alpha_values))))
+    errors_gauss = (np.zeros((num_trials, len(alpha_values))))
+    errors_dp = (np.zeros((num_trials, len(alpha_values))))
 
     for trial in range(num_trials):
         for j, alpha in enumerate(alpha_values):
@@ -183,17 +183,17 @@ def run_tests_fxp_alpha(num_trials=10):
                 admm_steps, robust_rounds, w_star,
                 dp_noise_x, dp_noise_y
             )
-            errors_gauss = fxp(np.linalg.norm(w_torrent - w_star)) * norm_w_inv
+            errors_gauss = (np.linalg.norm(w_torrent.get_val() - w_star)) * norm_w_inv
             errors_gauss[trial, i] = (error_gauss)
-            print("Error AG: ", error_gauss.info())
+            print("Error AG: ", error_gauss)
             # --- Torrent DP fxp ---
             w_torrent_fxp, _ = torrent_admm_fxp(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                 admm_steps, robust_rounds, w_star, dp_w
             )
-            errors_dp = fxp(np.linalg.norm(w_torrent_fxp - w_star)) * norm_w_inv
+            errors_dp = (np.linalg.norm(w_torrent_fxp.get_val() - w_star)) * norm_w_inv
             errors_dp[trial, j] = error_dp
-            print("Error DP: ", error_dp.info())
+            print("Error DP: ", error_dp)
     # Compute mean and variance
     mean_gauss = np.mean(errors_gauss, axis=0)
     var_gauss = np.var(errors_gauss, axis=0)
