@@ -184,7 +184,7 @@ def run_tests_fxp_alpha(num_trials=10):
                 dp_noise_x=dp_noise_x, dp_noise_y=dp_noise_y
             )
             error_gauss = (np.linalg.norm(w_torrent.get_val() - w_star)) * norm_w_inv
-            errors_gauss[trial, i] = (error_gauss)
+            errors_gauss[trial, j] = (error_gauss)
             print("Error AG: ", error_gauss)
             # --- Torrent DP fxp ---
             w_torrent_fxp, _ = torrent_admm_fxp(
