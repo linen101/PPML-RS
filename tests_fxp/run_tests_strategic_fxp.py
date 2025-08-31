@@ -89,6 +89,7 @@ def run_tests_fxp_d(num_trials=10):
                     admm_steps, robust_rounds, wstar=None, dp_w=dp_w_val
                 )
                 error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star_fxp)) * norm_w_inv    # cast to fxp
+                print("d :", d)
                 print("Error DP: ", error_torrent.info())
                 print("Torrent DP: ", w_torrent_fxp)
                 errors_dp[trial, i] = (error_torrent)
