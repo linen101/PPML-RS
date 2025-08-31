@@ -180,7 +180,7 @@ def run_tests_fxp_alpha(num_trials=10):
             # --- Torrent analyze gauss ---
             w_torrent, _ = torrent_admm_fxp_analyze_gauss(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
-                admm_steps, robust_rounds, w_star=None,
+                admm_steps, robust_rounds, wstar=None,
                 dp_noise_x=dp_noise_x, dp_noise_y=dp_noise_y
             )
             errors_gauss = (np.linalg.norm(w_torrent.get_val() - w_star)) * norm_w_inv
@@ -189,7 +189,7 @@ def run_tests_fxp_alpha(num_trials=10):
             # --- Torrent DP fxp ---
             w_torrent_fxp, _ = torrent_admm_fxp(
                 X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
-                admm_steps, robust_rounds, w_star=None, dp_w=dp_w
+                admm_steps, robust_rounds, wstar=None, dp_w=dp_w
             )
             errors_dp = (np.linalg.norm(w_torrent_fxp.get_val() - w_star)) * norm_w_inv
             errors_dp[trial, j] = error_dp
