@@ -18,181 +18,203 @@ from plots.plots_fxp import plot_metric_vs_alpha_fxp, plot_metric_vs_d_fxp
 markers = ['o', 'v', 's', 'p', 'x', 'h']  # Add more if needed
 
 
-def run_tests_fxp_d(n, num_trials=10):
-    # Define test size and noise parameters
-    # Number of samples
-    alpha_init= 0.2
-    beta = alpha_init + 0.1  # filter size
-    d_values = [10, 25, 50, 100]  # Different dimensions
-    #d_values=[10]
-    # dp noise accordingly
-    #dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
-    #dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
-    #dp_w = [0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464]     # for n = 100000
-    dp_w = [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554]      # for n = 100000, ||w*|| > 1
-    #dp_w = [0.0491542458] 
-    
-    # n= 10000 
-    dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
-    dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]
-    
-    # n = 100000
-    #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]
-    #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]
-    
-    #dp_noise_x = [86.87224608]    #n=10^5, d=10
-    #dp_noise_y = [274.7141631]     #n=10^5, d=10
-    sigma = 0.1  # Noise level
-    test_perc = 0.01  # Test set percentage
-    epsilon = 0.1  # Convergence thresholdc
-    
-    # Coruption strategies parameters
+def run_tests_fxp_d(num_trials=10):
+    # Parameters
+    alpha_init = 0.2
+    beta = alpha_init + 0.1
+    d_values = [10, 25, 50, 100]
+    sigma = 0.1
+    test_perc = 0.01
+    epsilon = 0.1
     additive = 10
     multiplicative = 10
-    
-    # Initialize lists to store results
-    w_errors_d_torrent = np.zeros(len(d_values))
-    w_errors_d_torrent_fxp = (np.zeros(len(d_values)))
-        
-    # admm parameters
     m = 2
     rho = 1
     admm_steps = 5
     robust_rounds = 5
     modelz = 1
-    train_size =  n - n*test_perc
-    
-    # method
-    methods = ['Torrent', 'Torrent fxp']
-    # Run multiple trials
-    for _ in range(num_trials):
-        
+
+    # Define configurations for different n
+    configs = {
+        10000: {
+            "dp_w": [0.0491542458, 0.2959143979, 1.184429552, 4.821505653],
+            "dp_noise_x": [86.87224608, 217.1806152, 434.3612304, 868.7224608],
+            "dp_noise_y": [274.7141631, 1085.903076, 3071.397715, 8687.224608]
+        },
+        100000: {
+            "dp_w": [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554],
+            "dp_noise_x": [96.89610525, 242.2402631, 484.4805263, 968.9610525],
+            "dp_noise_y": [306.412389, 1211.201316, 3425.794655, 9689.610525]
+        }
+    }
+
+    results = {}
+
+    for n, params in configs.items():
+        print(f"\n=== Running for n = {n} ===")
+        train_size = n - int(n * test_perc)
+
+        dp_w_list = params["dp_w"]
+        dp_noise_x_list = params["dp_noise_x"]
+        dp_noise_y_list = params["dp_noise_y"]
+
+        # store trial errors for mean/var computation
+        errors_dp = np.zeros((num_trials, len(d_values)))
+        errors_gauss = np.zeros((num_trials, len(d_values)))
+
+        for trial in range(num_trials):
+            for i, d in enumerate(d_values):
+                # generate dataset
+                X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
+                w_corrupt = additive + w_star * multiplicative
+                norm_w = np.linalg.norm(w_star)
+                norm_w_inv = 1 / norm_w
+
+                Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
+
+                X_parts = split_matrix(X_train, m, train_size)
+                y_parts = split_matrix_Y(Y_cor, m, train_size)
+
+                dp_w_val = dp_w_list[i]
+                dp_noise_x_val = dp_noise_x_list[i]
+                dp_noise_y_val = dp_noise_y_list[i]
+
+                # FXP input
+                X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
+                w_star_fxp = fxp(w_star)
+
+                # --- DP OLS style ---
+                w_torrent_fxp, _ = torrent_admm_fxp(
+                    X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                    admm_steps, robust_rounds, wstar=None, dp_w=dp_w_val
+                )
+                error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star_fxp)) * norm_w_inv
+                errors_dp[trial, i] = float(error_torrent)
+
+                # --- Analyze Gaussian noise ---
+                w_torrent, _ = torrent_admm_fxp_analyze_gauss(
+                    X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                    admm_steps, robust_rounds, wstar=None,
+                    dp_noise_x=dp_noise_x_val, dp_noise_y=dp_noise_y_val
+                )
+                error_gauss = fxp(np.linalg.norm(w_torrent - w_star_fxp)) * norm_w_inv
+                errors_gauss[trial, i] = float(error_gauss)
+
+        # Compute mean + variance
+        mean_dp = np.mean(errors_dp, axis=0)
+        var_dp = np.var(errors_dp, axis=0)
+        mean_gauss = np.mean(errors_gauss, axis=0)
+        var_gauss = np.var(errors_gauss, axis=0)
+
+        results[n] = {
+            "mean_dp": mean_dp,
+            "var_dp": var_dp,
+            "mean_gauss": mean_gauss,
+            "var_gauss": var_gauss,
+            "d_values": d_values
+        }
+
+        # Print summary for this n
+        print("\nResults for n =", n)
         for i, d in enumerate(d_values):
-            X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, d, sigma, test_perc)
-            w_corrupt = additive + w_star * multiplicative
-            norm_w = np.linalg.norm((w_star))
-            norm_w_inv = 1 / norm_w
-            #norm_w_inv = fxp(norm_w_inv)
-             
-            #print(f'w star : {w_star}')
-            #print(f'w star norm: {norm_w}')
-            Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha_init)
+            print(f"d={d}:  DP -> mean {mean_dp[i]:.6f}, var {var_dp[i]:.6f} | "
+                  f"Gauss -> mean {mean_gauss[i]:.6f}, var {var_gauss[i]:.6f}")
 
-            # Run Torrent
-            X_parts = split_matrix(X_train, m, train_size)
-            y_parts = split_matrix_Y(Y_cor, m, train_size)
-            
-            # Use the dp parameter corresponding to this d
-            dp_w_val = dp_w[i]
-            dp_noise_x_val = dp_noise_x[i]
-            dp_noise_y_val = dp_noise_y[i]
-            
-            # Run Torrent fxp
-            X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
-            w_star = fxp(w_star)
-            w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, wstar=None, dp_w=dp_w_val)
-            error_torrent = fxp(np.linalg.norm(w_torrent_fxp - w_star)) * norm_w_inv        # cast to fxp
-            w_errors_d_torrent_fxp[i] += error_torrent
-            print(f' sum trials error DP OLS: {error_torrent.info()}')
-            
-            w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, wstar=None, dp_noise_x=dp_noise_x_val, dp_noise_y=dp_noise_y_val)
-            error_gauss = fxp(np.linalg.norm(w_torrent - w_star)) * norm_w_inv      #cast to fxp
-            w_errors_d_torrent[i] += error_gauss
-            print(f' sum trials error Analyze Gauss: {error_gauss.info()}')
-        
-    # Compute averages
-    w_errors_d_torrent /= num_trials
-    w_errors_d_torrent_fxp /= num_trials
-    w_errors_d = [w_errors_d_torrent, w_errors_d_torrent_fxp]
-    print(f' TORRENT analyze gauss error: {w_errors_d_torrent}')
-    print(f' TORRENT fxp error: {w_errors_d_torrent_fxp}')
+    return results
 
-    # Plot results
-    #plot_metric_vs_d_fxp(w_errors_d, methods, r'$\| w - w^* \|_2$',  d_values, alpha_init, sigma, n)
-    
+
+# Run
+results = run_tests_fxp_d(num_trials=5)
+
 def run_tests_fxp_alpha(num_trials=10):
-    # Define test ssize and noise parameters
+    # Parameters
     n = 10000  # Number of samples
     dimension = 10
-    alpha_values = [ 0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
-    sigma = 0.1  # Noise level
-    test_perc = 0  # Test set percentage
-    epsilon = 0.1  # Convergence threshold
-    # dp noise accordingly
-    #dp_w = [0.0491542458, 0.2959143979, 1.184429552, 4.821505653]           # for n = 10000, ||w*|| > 1
-    #dp_w = [0.01851400853, 0.06787019106, 0.1861504838, 0.5212434669]      #for n = 10000
-    #dp_w = [0.00203186667, 0.00736297528, 0.01993442884, 0.05482502464]     # for n = 100000
-    #dp_w = [0.005377744112, 0.03197006629, 0.1262511128, 0.5046469554]      # for n = 100000, ||w*|| > 1
-    dp_w = 0.0491542458  #n=10^4, d=10
-    # 
-    #dp_noise_x = [86.87224608, 217.1806152, 434.3612304, 868.7224608]
-    #dp_noise_y = [274.7141631, 1085.903076, 3071.397715, 8687.224608]  # for n = 10000, ||w*|| > 1
-    #dp_noise_x = [96.89610525, 242.2402631, 484.4805263, 968.9610525]   
-    #dp_noise_y = [306.412389, 1211.201316, 3425.794655, 9689.610525]    
-    dp_noise_x = 86.87224608    #n=10^4, d=10
-    dp_noise_y = 274.7141631     #n=10^4, d=10
-    # Corruption strat parameters
+    alpha_values = [0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
+    sigma = 0.1
+    test_perc = 0
+    epsilon = 0.1
+
+    # DP params (fixed for this experiment)
+    dp_w = 0.0491542458   # n=10^4, d=10
+    dp_noise_x = 86.87224608
+    dp_noise_y = 274.7141631
+
+    # Corruption strategy
     additive = 10
     multiplicative = 10
-    
-    # Initialize lists to store results
-    w_errors_alpha_torrent = np.zeros(len(alpha_values))
-    w_errors_alpha_torrent_fxp = fxp(np.zeros(len(alpha_values)))
 
-    # admm parameters
+    # ADMM parameters
     m = 2
-    rho=1
-    admm_steps=5
-    robust_rounds=5
-    modelz=1
-    train_size =  n - n*test_perc
-    
-    # method
-    methods = ['Torrent analyze gauss', 'Torrent fxp']
-    # Run multiple trials
-    for _ in range(num_trials):
+    rho = 1
+    admm_steps = 5
+    robust_rounds = 5
+
+    train_size = n - int(n * test_perc)
+
+    # Store trial errors: shape (num_trials, len(alpha_values))
+    errors_gauss = np.zeros((num_trials, len(alpha_values)))
+    errors_dp = np.zeros((num_trials, len(alpha_values)))
+
+    for trial in range(num_trials):
         for j, alpha in enumerate(alpha_values):
-            X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(n, dimension, sigma, test_perc)
-            w_corrupt = multiplicative*w_star + additive  
+            X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(
+                n, dimension, sigma, test_perc
+            )
+            w_corrupt = multiplicative * w_star + additive
             Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
-            
-            norm_w = np.linalg.norm((w_star))
+
+            norm_w = np.linalg.norm(w_star)
             norm_w_inv = 1 / norm_w
-            
-            # Run Torrent
+
             X_parts = split_matrix(X_train, m, train_size)
             y_parts = split_matrix_Y(Y_cor, m, train_size)
-            
-            beta = alpha + 0.1  # filter size
-            
-            # Run Torrent analyze gauss fxp
+            beta = alpha + 0.1
+
+            # Convert to fxp
             X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
-            
-            w_torrent, _ = torrent_admm_fxp_analyze_gauss(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_noise_x, dp_noise_y)
-            w_errors_alpha_torrent[j] += np.linalg.norm(w_torrent - w_star)* norm_w_inv
-            print(f' sum trials error analyze gauss: {w_errors_alpha_torrent[j]}')
 
-            ## Run Torrent dp fxp
-            w_torrent_fxp, _= torrent_admm_fxp(X_parts_fxp, y_parts_fxp, beta, epsilon, rho, admm_steps, robust_rounds, w_star, dp_w)
-            w_errors_alpha_torrent_fxp[j] += np.linalg.norm(w_torrent_fxp - w_star)* norm_w_inv
-            print(f' sum trials error DP OLS: {w_errors_alpha_torrent_fxp[j]}')
-            
-    w_errors_alpha_torrent /= num_trials
-    w_errors_alpha_torrent_fxp /= num_trials
-    print(f' TORRENT analyze gauss error: {w_errors_alpha_torrent}')
-    print(f' TORRENT fxp error: {w_errors_alpha_torrent_fxp}')
-    w_errors_alpha = [w_errors_alpha_torrent, w_errors_alpha_torrent_fxp]
-    
-    # Plot results
-    plot_metric_vs_alpha_fxp(w_errors_alpha, methods, r'$\| w - w^* \|_2$',  alpha_values, dimension, sigma, n)
-    
+            # --- Torrent analyze gauss ---
+            w_torrent, _ = torrent_admm_fxp_analyze_gauss(
+                X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                admm_steps, robust_rounds, w_star,
+                dp_noise_x, dp_noise_y
+            )
+            errors_gauss[trial, j] = np.linalg.norm(w_torrent - w_star) * norm_w_inv
 
-# Run the tests with averaging
-num_trials = 10
-n = 1000
-#run_tests_fxp_d(n,num_trials)
-n= 1000
-run_tests_fxp_d(n,num_trials)
+            # --- Torrent DP fxp ---
+            w_torrent_fxp, _ = torrent_admm_fxp(
+                X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                admm_steps, robust_rounds, w_star, dp_w
+            )
+            errors_dp[trial, j] = np.linalg.norm(w_torrent_fxp - w_star) * norm_w_inv
 
-#run_tests_fxp_alpha(num_trials)
+    # Compute mean and variance
+    mean_gauss = np.mean(errors_gauss, axis=0)
+    var_gauss = np.var(errors_gauss, axis=0)
+    mean_dp = np.mean(errors_dp, axis=0)
+    var_dp = np.var(errors_dp, axis=0)
+
+    results = {
+        "alpha_values": alpha_values,
+        "mean_gauss": mean_gauss,
+        "var_gauss": var_gauss,
+        "mean_dp": mean_dp,
+        "var_dp": var_dp
+    }
+
+    # Print summary
+    print("\nResults for different alpha values:")
+    for j, alpha in enumerate(alpha_values):
+        print(
+            f"alpha={alpha:.2f}:  "
+            f"Gauss -> mean {mean_gauss[j]:.6f}, var {var_gauss[j]:.6f} | "
+            f"DP -> mean {mean_dp[j]:.6f}, var {var_dp[j]:.6f}"
+        )
+
+    return results
+
+
+# Example usage
+results_alpha = run_tests_fxp_alpha(num_trials=5)
 

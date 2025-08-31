@@ -29,7 +29,7 @@ def generate_synthetic_dataset(n, d, sigma, test_percentage=0.2,i=0):
     #w_star = np.random.randn(d, 1) 
     
     w_star = np.random.randn(d, 1)
-    w_star /= np.linalg.norm(w_star)
+    #w_star /= np.linalg.norm(w_star)
 
     # Generate feature vectors X with dimensions [d, n] 
     # X are sampled from a Gaussian distribution with standard deviation
