@@ -135,7 +135,7 @@ def run_tests_fxp_alpha(num_trials=10):
     dimension = 10
     alpha_values = [0.1, 0.15, 0.2, 0.25, 0.3]  # Corruption rates
     sigma = 0.1
-    test_perc = 0
+    test_perc = 0.01
     epsilon = 0.1
 
     # DP params (fixed for this experiment)
