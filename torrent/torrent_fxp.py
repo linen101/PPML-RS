@@ -196,7 +196,7 @@ q2_sum /= 100
 q3_sum /= 100  
 print(f'fxp quantile: {q1_sum}, fxp distributeed: {q2_sum}, dp fxp distributeed: {q3_sum}')
 """
-def hard_thresholding_admm(r, q):
+def hard_thresholding_admm(r, q, eEM=0.0625):
     """_summary_
 
     Args:
@@ -210,7 +210,7 @@ def hard_thresholding_admm(r, q):
     m = r.shape[0]
     
     # compute q-quantile of residual errors
-    quant = dp_fxp_dist_quantile(r, q)
+    quant = dp_fxp_dist_quantile(r, q, dp_e=eEM)
     #print(f'Torrent fxp quantile:{quant}')
     S = np.empty(m, dtype=object)
     for i in range(m):
@@ -272,7 +272,7 @@ def admm_fxp(X, y, S, rho, k):
         z = znew    
     return z   
 
-def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w):
+def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w, eEM=0.0625):
     """_summary_
 
     Args:
@@ -328,11 +328,11 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w)
             # Compute residuals r
             r[i] =  abs(y[i] - dot_prod[i]) #y - wx
             #print(f'res in tor: {r[i]}')
-        S = hard_thresholding_admm(r, 1-beta)  
+        S = hard_thresholding_admm(r, 1-beta, eEM=eEM)  
         iteration = iteration + 1     
     return w,ro
 
-def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_noise_x, dp_noise_y):
+def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_noise_x, dp_noise_y, eEM=0.0625):
     """_summary_
 
     Args:
@@ -387,7 +387,7 @@ def torrent_admm_fxp_analyze_gauss(X, y,  beta, epsilon, rho, admm_steps, rounds
             # Compute residuals r
             r[i] = abs(dot_prod[i] - y[i])          #y - wx
             #print(f'res in tor: {r[i]}')
-        S = hard_thresholding_admm(r, 1-beta)  
+        S = hard_thresholding_admm(r, 1-beta, eEM=eEM)  
         iteration = iteration + 1     
     return w,ro
 

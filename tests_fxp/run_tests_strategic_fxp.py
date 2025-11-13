@@ -221,5 +221,105 @@ def run_tests_fxp_alpha(num_trials=10):
 
 
 # Example usage
-results_alpha = run_tests_fxp_alpha(num_trials=5)
+#results_alpha = run_tests_fxp_alpha(num_trials=5)
 
+def run_tests_fxp_noise(num_trials=5):
+    """
+    Runs experiments for different dimensions and noise (sigma) values.
+    Example setup:
+      - d = 10, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
+      - d = 25, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
+      - d = 50, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
+      - d = 75, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
+      - d = 100, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
+    """
+    n = 10000
+    test_perc = 0.01
+    epsilon = 0.1
+    additive = 10
+    multiplicative = 10
+    m = 2
+    rho = 1
+    admm_steps = 5
+    robust_rounds = 5
+    alpha = 0.2
+    beta = alpha + 0.1
+    sigma = 0.1
+
+    # Dimensions and noise levels to test
+    dp_delta = 0.00001
+    d_values = [10, 25, 50, 75, 100]
+    noise_values = [0.1, 0.2, 0.5, 0.7, 1.0]
+    dp_sensitivity = [0.01131644409, 0.06812633752, 0.2726830732, 1.1100221]
+    dp_sensitivity_x = [10, 25, 50, 100]
+    dp_sensitivity_y = [31.6227766, 125, 353.5533906, 1000]
+
+    
+    results = {}
+
+    for d in d_values:
+        print(f"\n=== Running for d = {d} ===")
+        results[d] = {}
+        for dp_noise, dp_sens, dp_sens_x, dp_sens_y in zip(noise_values, dp_sensitivity, dp_sensitivity_x, dp_sensitivity_y):
+            print(f"\n--- epsilon = {dp_noise} ---")
+            # DP params (approximation for n=10^4)
+            # DP params (approximation for n=10^4)
+            dp_w = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens/dp_noise
+            dp_noise_x = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_x/dp_noise
+            dp_noise_y = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_y/dp_noise
+
+
+            errors_dp = np.zeros(num_trials)
+            errors_gauss = np.zeros(num_trials)
+
+            for trial in range(num_trials):
+                # Generate dataset
+                X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(
+                    n, d, sigma, test_perc, i=trial
+                )
+
+                w_corrupt = multiplicative * w_star + additive
+                Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
+                norm_w_inv = 1 / np.linalg.norm(w_star)
+
+                X_parts = split_matrix(X_train, m, n - int(n * test_perc))
+                y_parts = split_matrix_Y(Y_cor, m, n - int(n * test_perc))
+                X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
+
+                # --- DP fixed-point TORRENT ---
+                w_torrent_fxp, _ = torrent_admm_fxp(
+                    X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                    admm_steps, robust_rounds, wstar=None, dp_w=dp_w, eEM=dp_noise/16
+                )
+                err_dp = np.linalg.norm(w_torrent_fxp.get_val() - w_star) * norm_w_inv
+                errors_dp[trial] = err_dp
+
+                # --- Gaussian fixed-point TORRENT ---
+                w_torrent_gauss, _ = torrent_admm_fxp_analyze_gauss(
+                    X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
+                    admm_steps, robust_rounds, wstar=None,
+                    dp_noise_x=dp_noise_x, dp_noise_y=dp_noise_y, eEM=dp_noise/16
+                )
+                err_gauss = np.linalg.norm(w_torrent_gauss.get_val() - w_star) * norm_w_inv
+                errors_gauss[trial] = err_gauss
+
+                print(f"Trial {trial+1}: DP error = {err_dp:.6f}, Gauss error = {err_gauss:.6f}")
+
+            # Aggregate
+            mean_dp = np.mean(errors_dp)
+            var_dp = np.var(errors_dp)
+            mean_gauss = np.mean(errors_gauss)
+            var_gauss = np.var(errors_gauss)
+
+            results[d][dp_noise] = {
+                "mean_dp": mean_dp,
+                "var_dp": var_dp,
+                "mean_gauss": mean_gauss,
+                "var_gauss": var_gauss
+            }
+
+            print(f" dp_noise={dp_noise:.2f}, DP mean={mean_dp:.6f}, var={var_dp:.6f} | "
+                  f"Gauss mean={mean_gauss:.6f}, var={var_gauss:.6f}")
+
+    return results
+results_noise = run_tests_fxp_noise(num_trials=5)
