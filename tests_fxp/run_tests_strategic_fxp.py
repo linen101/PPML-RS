@@ -250,21 +250,22 @@ def run_tests_fxp_noise(num_trials=5):
     dp_delta = 0.00001
     d_values = [10, 25, 50, 75, 100]
     noise_values = [0.001]
-    dp_sensitivity = [0.01131644409, 0.06812633752, 0.2726830732, 1.1100221]
-    dp_sensitivity_x = [10, 25, 50, 100]
-    dp_sensitivity_y = [31.6227766, 125, 353.5533906, 1000]
-
-    
+        
     results = {}
 
     for d in d_values:
         print(f"\n=== Running for d = {d} ===")
         results[d] = {}
-        for dp_noise, dp_sens, dp_sens_x, dp_sens_y in zip(noise_values, dp_sensitivity, dp_sensitivity_x, dp_sensitivity_y):
+        for dp_noise in noise_values:
             print(f"\n--- epsilon = {dp_noise} ---")
             # DP params (approximation for n=10^4)
             # DP params (approximation for n=10^4)
+            lambda_min = n - 0.1
+            dp_sens = (1/(lambda_min**2)) * d * math.sqrt(d)* (n * math.sqrt(d) + d * math.sqrt(n)) + (1/lambda_min)*d
             dp_w = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens/dp_noise
+
+            dp_sens_x = d
+            dp_sens_y = d*math.sqrt(d)
             dp_noise_x = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_x/dp_noise
             dp_noise_y = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_y/dp_noise
 
@@ -291,7 +292,7 @@ def run_tests_fxp_noise(num_trials=5):
                     X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                     admm_steps, robust_rounds, wstar=None, dp_w=dp_w, eEM=dp_noise/16
                 )
-                err_dp = np.linalg.norm(w_torrent_fxp.get_val() - w_star) * norm_w_inv
+                err_dp = np.linalg.norm(w_torrent_fxp.get_val() - w_star) 
                 errors_dp[trial] = err_dp
 
                 # --- Gaussian fixed-point TORRENT ---
@@ -300,10 +301,10 @@ def run_tests_fxp_noise(num_trials=5):
                     admm_steps, robust_rounds, wstar=None,
                     dp_noise_x=dp_noise_x, dp_noise_y=dp_noise_y, eEM=dp_noise/16
                 )
-                err_gauss = np.linalg.norm(w_torrent_gauss.get_val() - w_star) * norm_w_inv
+                err_gauss = np.linalg.norm(w_torrent_gauss.get_val() - w_star) 
                 errors_gauss[trial] = err_gauss
 
-                print(f"Trial {trial+1}: DP error = {err_dp:.6f}, Gauss error = {err_gauss:.6f}")
+                print(f"Trial {trial+1}: DP error = {err_dp:.12f}, Gauss error = {err_gauss:.12f}")
 
             # Aggregate
             mean_dp = np.mean(errors_dp)
@@ -318,8 +319,8 @@ def run_tests_fxp_noise(num_trials=5):
                 "var_gauss": var_gauss
             }
 
-            print(f" dp_noise={dp_noise:.2f}, DP mean={mean_dp:.6f}, var={var_dp:.6f} | "
-                  f"Gauss mean={mean_gauss:.6f}, var={var_gauss:.6f}")
+            print(f" dp_noise={dp_noise:.12f}, DP mean={mean_dp:.12f}, var={var_dp:.12f} | "
+                  f"Gauss mean={mean_gauss:.12f}, var={var_gauss:.12f}")
 
     return results
 results_noise = run_tests_fxp_noise(num_trials=5)

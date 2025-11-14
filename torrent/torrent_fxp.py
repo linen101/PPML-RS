@@ -166,7 +166,7 @@ def dp_fxp_dist_quantile(r, q, dp_e=0.0625):
             m = alpha
             break
     return(m)
-"""
+
 # ---- EXAMPLE ----
 # Create example fixed-point matrices
 np.random.seed(42)
@@ -186,7 +186,7 @@ q3_sum = 0
 for i in range (100):
     q1[i] = fxp_quantile(r, 0.5)
     q2[i] = fxp_dist_quantile(r, 0.5)
-    q3[i] = dp_fxp_dist_quantile(r, 0.5)
+    q3[i] = dp_fxp_dist_quantile(r, 0.5, dp_e=0.0625)
     q1_sum += q1[i]
     q2_sum += q2[i]
     q3_sum += q3[i]
@@ -195,7 +195,7 @@ q1_sum /= 100
 q2_sum /= 100
 q3_sum /= 100  
 print(f'fxp quantile: {q1_sum}, fxp distributeed: {q2_sum}, dp fxp distributeed: {q3_sum}')
-"""
+
 def hard_thresholding_admm(r, q, eEM=0.0625):
     """_summary_
 
