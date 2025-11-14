@@ -249,7 +249,7 @@ def run_tests_fxp_noise(num_trials=5):
     # Dimensions and noise levels to test
     dp_delta = 0.00001
     d_values = [10, 25, 50, 75, 100]
-    noise_values = [0.001]
+    noise_values = [0.05, 0.1, 0.2, 0.5, 0.7, 1, 1.5]
         
     results = {}
 
