@@ -315,8 +315,8 @@ def torrent_admm_fxp(X, y,  beta, epsilon, rho, admm_steps, rounds, wstar, dp_w,
         S[i] = np.diagflat(np.ones(ni))
 
     for ro in range(rounds) :
-        w = admm_fxp(X, y, S, rho, admm_steps)
-        #w = admm_fxp(X, y, S, rho, admm_steps) + fxp(dp_w*np.random.randn(d, 1))
+        #w = admm_fxp(X, y, S, rho, admm_steps)
+        w = admm_fxp(X, y, S, rho, admm_steps) + fxp(dp_w*np.random.randn(d, 1))
         if wstar is not None:
             error= np.linalg.norm((w - wstar))
             error_norm = error * norm_w_inv
