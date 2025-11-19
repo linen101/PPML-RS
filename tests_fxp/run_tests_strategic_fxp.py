@@ -233,7 +233,7 @@ def run_tests_fxp_noise(num_trials=5):
       - d = 75, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
       - d = 100, sigma ∈ [0.1, 0.2, 0.5, 0.7, 1]
     """
-    n = 10000
+    n = 100000
     test_perc = 0.01
     epsilon = 0.1
     additive = 10
@@ -247,7 +247,7 @@ def run_tests_fxp_noise(num_trials=5):
     sigma = 0.1
 
     # Dimensions and noise levels to test
-    dp_delta = 0.00001
+    dp_delta = 0.000001
     d_values = [10, 25, 50, 75, 100]
     noise_values = [0.1, 0.2, 0.5, 0.7, 1, 1.5]
         
@@ -292,37 +292,35 @@ def run_tests_fxp_noise(num_trials=5):
                     X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                     admm_steps, robust_rounds, wstar=None, dp_w=dp_w, eEM=dp_noise/16
                 )
-                err_dp = np.linalg.norm(w_torrent_fxp.get_val() - w_star) 
+                err_dp = np.linalg.norm(w_torrent_fxp.get_val() - w_star) * norm_w_inv
                 errors_dp[trial] = err_dp
-                """
+                
                 # --- Gaussian fixed-point TORRENT ---
                 w_torrent_gauss, _ = torrent_admm_fxp_analyze_gauss(
                     X_parts_fxp, y_parts_fxp, beta, epsilon, rho,
                     admm_steps, robust_rounds, wstar=None,
                     dp_noise_x=dp_noise_x, dp_noise_y=dp_noise_y, eEM=dp_noise/16
                 )
-                err_gauss = np.linalg.norm(w_torrent_gauss.get_val() - w_star) 
+                err_gauss = np.linalg.norm(w_torrent_gauss.get_val() - w_star) * norm_w_inv
                 errors_gauss[trial] = err_gauss
-                """
-                print(f"Trial {trial+1}: DP error = {err_dp:.12f}")
-                      #, Gauss error = {err_gauss:.12f}")
+                
+                print(f"Trial {trial+1}: DP error = {err_dp:.12f}, Gauss error = {err_gauss:.12f}")
 
             # Aggregate
             mean_dp = np.mean(errors_dp)
             var_dp = np.var(errors_dp)
-            #mean_gauss = np.mean(errors_gauss)
-            #var_gauss = np.var(errors_gauss)
+            mean_gauss = np.mean(errors_gauss)
+            var_gauss = np.var(errors_gauss)
 
             results[d][dp_noise] = {
                 "mean_dp": mean_dp,
                 "var_dp": var_dp,
-                #"mean_gauss": mean_gauss,
-                #"var_gauss": var_gauss
+                "mean_gauss": mean_gauss,
+                "var_gauss": var_gauss
             }
 
-            print(f" dp_noise={dp_noise:.12f}, DP mean={mean_dp:.12f}, var={var_dp:.12f}" )
-                  #| "
-                  #f"Gauss mean={mean_gauss:.12f}, var={var_gauss:.12f}")
+            print(f" dp_noise={dp_noise:.12f}, DP mean={mean_dp:.12f}, var={var_dp:.12f}" 
+                  | f"Gauss mean={mean_gauss:.12f}, var={var_gauss:.12f}")
 
     return results
 results_noise = run_tests_fxp_noise(num_trials=5)
