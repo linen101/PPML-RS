@@ -258,8 +258,6 @@ def run_tests_fxp_noise(num_trials=5):
         results[d] = {}
         for dp_noise in noise_values:
             print(f"\n--- epsilon = {dp_noise} ---")
-            # DP params (approximation for n=10^4)
-            # DP params (approximation for n=10^4)
             """test"""
             d1 = d//10
             n1 = n//10
@@ -323,8 +321,8 @@ def run_tests_fxp_noise(num_trials=5):
                 "var_gauss": var_gauss
             }
 
-            print(f" dp_noise={dp_noise:.12f}, DP mean={mean_dp:.12f}, var={var_dp:.12f}" 
-                  | f"Gauss mean={mean_gauss:.12f}, var={var_gauss:.12f}")
+            print(f" dp_noise={dp_noise:.12f}, DP mean={mean_dp:.12f}, var={var_dp:.12f} | "
+                  f"Gauss mean={mean_gauss:.12f}, var={var_gauss:.12f}")
 
     return results
 results_noise = run_tests_fxp_noise(num_trials=5)
