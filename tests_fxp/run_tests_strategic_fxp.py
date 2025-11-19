@@ -260,12 +260,16 @@ def run_tests_fxp_noise(num_trials=5):
             print(f"\n--- epsilon = {dp_noise} ---")
             # DP params (approximation for n=10^4)
             # DP params (approximation for n=10^4)
-            lambda_min = n - 0.1
-            dp_sens = (1/(lambda_min**2)) * d * math.sqrt(d)* (n * math.sqrt(d) + d * math.sqrt(n)) + (1/lambda_min)*d
+            """test"""
+            d1 = d//10
+            n1 = n//10
+            lambda_min = n1 - 0.1
+            dp_sens = (1/(lambda_min**2)) * d1 * math.sqrt(d1)* (n1 * math.sqrt(d1) + d1 * math.sqrt(n1)) + (1/lambda_min)*d1
             dp_w = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens/dp_noise
 
-            dp_sens_x = d
-            dp_sens_y = d*math.sqrt(d)
+            
+            dp_sens_x = d1
+            dp_sens_y = d1*math.sqrt(d1)
             dp_noise_x = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_x/dp_noise
             dp_noise_y = math.sqrt(2*math.log(1.25/dp_delta))*dp_sens_y/dp_noise
 
@@ -276,15 +280,15 @@ def run_tests_fxp_noise(num_trials=5):
             for trial in range(num_trials):
                 # Generate dataset
                 X_train, Y_train, X_test, Y_test, w_star = generate_synthetic_dataset(
-                    n, d, sigma, test_perc, i=trial
+                    n1, d1, sigma, test_perc, i=trial
                 )
 
                 w_corrupt = multiplicative * w_star + additive
                 Y_cor, _ = strategic_corruption_scaled(X_train, Y_train, w_star, w_corrupt, alpha)
                 norm_w_inv = 1 / np.linalg.norm(w_star)
 
-                X_parts = split_matrix(X_train, m, n - int(n * test_perc))
-                y_parts = split_matrix_Y(Y_cor, m, n - int(n * test_perc))
+                X_parts = split_matrix(X_train, m, n1 - int(n * test_perc))
+                y_parts = split_matrix_Y(Y_cor, m, n1 - int(n * test_perc))
                 X_parts_fxp, y_parts_fxp = split_matrix_fxp(X_parts, y_parts)
 
                 # --- DP fixed-point TORRENT ---
